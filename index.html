@@ -3,229 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coin Flip Arena - Championship</title>
+    <title>Coin Flip Arena - P2P Multiplayer</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f1319;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .arena-container {
-            background: #171d26;
-            border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-            padding: 30px;
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            border: 1px solid #2b3545;
-        }
-        h1 { margin: 0 0 5px 0; color: #ffd700; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
-        .subtitle { color: #8a99ad; font-size: 14px; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b0f17; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .wrapper { background: #141b26; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 480px; padding: 25px; text-align: center; border: 1px solid #233044; }
+        h1 { color: #ffca28; margin: 0 0 10px; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+        .pool { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155; }
+        .pool-txt { font-size: 28px; color: #38bdf8; font-weight: bold; font-family: monospace; }
+        .scoreboard { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; }
+        .card { background: #1e2633; padding: 15px; border-radius: 12px; flex: 1; border: 2px solid transparent; }
+        .card.me { border-color: #ffca28; }
+        .score { font-size: 32px; font-weight: bold; margin-top: 5px; }
         
-        /* Global Pool Bar */
-        .pool-section { background: #222b38; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #364457; }
-        .pool-title { font-size: 13px; color: #a0aec0; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
-        .pool-amount { font-size: 24px; color: #4fd1c5; font-weight: bold; font-family: monospace; }
+        /* 3D Coin Animation */
+        .coin-box { height: 150px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-bottom: 25px; }
+        .coin { width: 100px; height: 100px; position: relative; transform-style: preserve-3d; }
+        .face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; border: 5px solid #d9a700; box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 5px 15px rgba(0,0,0,0.5); }
+        .heads { background: linear-gradient(135deg, #ffe066, #f59e0b); color: #451a03; }
+        .tails { background: linear-gradient(135deg, #f1f5f9, #94a3b8); color: #0f172a; transform: rotateX(180deg); border-color: #64748b; }
         
-        /* Match Arena Dashboard */
-        .matchboard { display: flex; justify-content: space-between; margin-bottom: 25px; gap: 10px; }
-        .player-card { background: #1f2733; padding: 12px; border-radius: 10px; flex: 1; border: 1px solid #2d3748; }
-        .player-card.active-user { border-color: #ffd700; background: #232d3b; }
-        .player-name { font-size: 14px; font-weight: bold; color: #cbd5e0; margin-bottom: 5px; }
-        .player-score { font-size: 28px; font-weight: bold; color: #fff; }
-        .player-choice-tag { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 4px; background: #4a5568; margin-top: 5px; }
+        @keyframes spinHeads { from { transform: rotateX(0); } to { transform: rotateX(2160deg); } }
+        @keyframes spinTails { from { transform: rotateX(0); } to { transform: rotateX(2340deg); } }
 
-        /* 3D Coin Animation Container */
-        .coin-wrapper { height: 130px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px; perspective: 1000px; }
-        .coin { width: 90px; height: 90px; position: relative; transform-style: preserve-3d; transition: transform 2s cubic-bezier(0.1, 0.8, 0.3, 1); }
-        .coin div { width: 100%; height: 100%; position: absolute; border-radius: 50%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; border: 4px solid #b79407; box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.5); }
-        .heads-side { background: linear-gradient(135deg, #ffd700, #b79407); color: #4a3700; }
-        .tails-side { background: linear-gradient(135deg, #e2e8f0, #cbd5e0); color: #2d3748; transform: rotateY(180deg); border-color: #a0aec0 !important; }
+        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+        .b-heads { background: #2563eb; } .b-tails { background: #ea580c; }
+        button:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
         
-        /* Interactive Mechanics */
-        .action-title { font-size: 14px; color: #a0aec0; margin-bottom: 10px; text-align: left; font-weight: bold; }
-        .choice-buttons { display: flex; gap: 15px; margin-bottom: 20px; }
-        .choice-btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; color: white; }
-        .choice-btn:active { transform: scale(0.97); }
-        .btn-heads { background: #3182ce; }
-        .btn-heads:hover { background: #2b6cb0; }
-        .btn-tails { background: #dd6b20; }
-        .btn-tails:hover { background: #c05621; }
-        
-        /* Items & Special Powerups */
-        .items-grid { display: flex; gap: 10px; margin-bottom: 20px; }
-        .item-card { flex: 1; background: #232d3b; border: 1px dashed #4a5568; padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .item-card:hover:not(.disabled) { border-color: #ffd700; background: #2b374a; }
-        .item-card.disabled { opacity: 0.4; cursor: not-allowed; }
-        .item-icon { font-size: 18px; margin-bottom: 3px; }
-
-        /* Game System Logging Console */
-        .console-log { background: #0b0e14; padding: 12px; border-radius: 8px; text-align: left; font-family: monospace; font-size: 11px; height: 100px; overflow-y: auto; border: 1px solid #1f2733; color: #718096; }
-        .status-win { color: #48bb78; font-weight: bold; }
-        .status-lose { color: #f56565; font-weight: bold; }
+        .setup-box { background: #1e2633; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
+        input { width: 80%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; margin-bottom: 10px; font-size: 14px; }
+        .item-deck { background: #1e2633; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 1px dashed #4b5563; }
+        .item-deck.used { opacity: 0.3; cursor: not-allowed; }
+        .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 12px; height: 80px; overflow-y: auto; color: #94a3b8; }
     </style>
 </head>
 <body>
 
-<div class="arena-container">
+<div class="wrapper">
     <h1>Coin Flip Arena</h1>
-    <div class="subtitle">First player to collect from the pool wins the match!</div>
-
-    <!-- Global Target Pool Progress Tracking -->
-    <div class="pool-section">
-        <div class="pool-title">🏆 Global Reserve Target Pool</div>
-        <div class="pool-amount"><span id="pool-count">1000000</span> COINS</div>
+    
+    <div class="setup-box" id="lobby-ui">
+        <div style="font-size: 13px; color:#94a3b8; margin-bottom:5px;">Your Invite Game ID:</div>
+        <b style="color: #ffca28; font-size: 16px;" id="my-id-display">Generating...</b>
+        <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0;">
+        <input type="text" id="join-id-input" placeholder="Paste Opponent's ID here">
+        <button style="background: #10b981; padding: 10px; font-size:14px;" onclick="connectToOpponent()">Join Opponent Arena</button>
     </div>
 
-    <!-- Live Active Matchboard -->
-    <div class="matchboard">
-        <div class="player-card active-user">
-            <div class="player-name">You (Player 1)</div>
-            <div class="player-score" id="p1-score">0</div>
-            <div class="player-choice-tag" id="p1-choice">Ready</div>
-        </div>
-        <div class="player-card">
-            <div class="player-name">Opponent (Player 2)</div>
-            <div class="player-score" id="p2-score">0</div>
-            <div class="player-choice-tag" id="p2-choice">Waiting</div>
-        </div>
+    <div class="pool">
+        <div style="font-size: 11px; color: #94a3b8;">GLOBAL TARGET RESERVE</div>
+        <div class="pool-txt"><span id="pool-disp">1,000,000</span> COINS</div>
     </div>
 
-    <!-- 3D Flipping Animation Element -->
-    <div class="coin-wrapper">
-        <div class="coin" id="coin-element">
-            <div class="heads-side">HEADS</div>
-            <div class="tails-side">TAILS</div>
+    <div class="scoreboard">
+        <div class="card me">
+            <div>You</div>
+            <div class="score" id="score-me">0</div>
+            <div style="font-size: 11px; color:#a1a1aa;" id="status-me">Waiting...</div>
+        </div>
+        <div class="card">
+            <div>Opponent</div>
+            <div class="score" id="score-opp">0</div>
+            <div style="font-size: 11px; color:#a1a1aa;" id="status-opp">Waiting...</div>
         </div>
     </div>
 
-    <!-- Powerups & Items Deck -->
-    <div class="action-title">Inventory Items</div>
-    <div class="items-grid">
-        <div class="item-card" id="item-steal" onclick="useStealCard()">
-            <div class="item-icon">🃟</div>
-            <b>Steal Card</b><br>Rob 1 coin from Opponent
-        </div>
-        <div class="item-card disabled">
-            <div class="item-icon">⚡</div>
-            <b>Double Mode</b><br>Locked (Premium)
+    <div class="coin-box">
+        <div class="coin" id="coin-obj">
+            <div class="face heads">HEADS</div>
+            <div class="face tails">TAILS</div>
         </div>
     </div>
 
-    <!-- Input Action Deck -->
-    <div class="action-title">Select Your Call For This Round</div>
-    <div class="choice-buttons">
-        <button class="choice-btn btn-heads" id="btn-h" onclick="playRound('Heads')">HEADS</button>
-        <button class="choice-btn btn-tails" id="btn-t" onclick="playRound('Tails')">TAILS</button>
+    <div class="item-deck" id="steal-btn" onclick="useStealItem()">
+        🃏 <b>Steal Card Powerup</b> (Take 1 Coin)
     </div>
 
-    <!-- Output Feed System -->
-    <div class="console-log" id="console-feed">> Arena initialized securely. Choose Heads or Tails to lock in.</div>
+    <div class="btn-group">
+        <button class="b-heads" id="btn-h" onclick="makeChoice('Heads')" disabled>HEADS</button>
+        <button class="b-tails" id="btn-t" onclick="makeChoice('Tails')" disabled>TAILS</button>
+    </div>
+
+    <div class="logs" id="log-box">> System online. Copy your ID to invite a friend!</div>
 </div>
 
 <script>
+    let peer = new Peer();
+    let conn = null;
     let globalPool = 1000000;
-    let player1Score = 0;
-    let player2Score = 0;
-    let streakCount = 0;
-    let isFlipping = false;
-    let stealUsed = false;
+    let myScore = 0;
+    let oppScore = 0;
+    let myChoice = null;
+    let oppChoice = null;
+    let amIHost = false;
+    let streak = 0;
 
-    const coin = document.getElementById('coin-element');
-    const feed = document.getElementById('console-feed');
+    const logBox = document.getElementById('log-box');
+    const coinObj = document.getElementById('coin-obj');
 
-    function writeLog(msg) {
-        feed.innerHTML = `> ${msg}<br>${feed.innerHTML}`;
+    function log(m) { logBox.innerHTML = `> ${m}<br>${logBox.innerHTML}`; }
+
+    // 1. Generate Your Lobby Link
+    peer.on('open', (id) => {
+        document.getElementById('my-id-display').innerText = id;
+    });
+
+    // 2. Wait for a real player to connect to you
+    peer.on('connection', (connection) => {
+        conn = connection;
+        amIHost = true;
+        setupNetworkTraffic();
+        log("⚔️ Another player connected! Match started.");
+        document.getElementById('lobby-ui').style.display = 'none';
+        enableButtons();
+    });
+
+    // 3. Connect to a friend's ID manually
+    function connectToOpponent() {
+        const targetId = document.getElementById('join-id-input').value.trim();
+        if(!targetId) return;
+        conn = peer.connect(targetId);
+        amIHost = false;
+        setupNetworkTraffic();
+        log("⚔️ Connected to the Host! Match started.");
+        document.getElementById('lobby-ui').style.display = 'none';
+        enableButtons();
     }
 
-    function useStealCard() {
-        if(stealUsed || isFlipping) return;
-        if(player2Score < 1) {
-            writeLog("Opponent has no coins to steal!");
-            return;
+    function setupNetworkTraffic() {
+        conn.on('data', (data) => {
+            if(data.type === 'CHOICE') {
+                oppChoice = data.choice;
+                document.getElementById('status-opp').innerText = "Locked In 🔒";
+                checkRoundResolution();
+            }
+            if(data.type === 'STEAL') {
+                myScore = Math.max(0, myScore - 1);
+                oppScore++;
+                updateScores();
+                log("🃏 Your opponent activated a Steal Card and robbed 1 coin from you!");
+            }
+            if(data.type === 'SYNC_FLIP') {
+                executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore);
+            }
+        });
+    }
+
+    function makeChoice(val) {
+        myChoice = val;
+        document.getElementById('status-me').innerText = `Selected: ${val} 🔒`;
+        disableButtons();
+        conn.send({ type: 'CHOICE', choice: val });
+        checkRoundResolution();
+    }
+
+    function checkRoundResolution() {
+        if(myChoice && oppChoice && amIHost) {
+            // Host acts as the central decentralized game rule authority
+            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            
+            let p1Win = (myChoice === outcome);
+            let p2Win = (oppChoice === outcome);
+
+            if(p1Win) {
+                myScore++;
+                streak++;
+                if(streak === 3) { myScore += 10; log("🔥 STREAK BONUS! +10 coins dropped!"); }
+            } else { streak = 0; }
+
+            if(p2Win) oppScore++;
+
+            globalPool -= (p1Win ? 1 : 0) + (p2Win ? 1 : 0);
+
+            // Host syncs structural game packet data directly to client browser
+            executeVisualFlip(outcome, globalPool, myScore, oppScore);
+            conn.send({ type: 'SYNC_FLIP', outcome, pool: globalPool, hScore: oppScore, tScore: myScore });
         }
-        player2Score--;
-        player1Score++;
-        stealUsed = true;
-        document.getElementById('item-steal').classList.add('disabled');
-        document.getElementById('p1-score').innerText = player1Score;
-        document.getElementById('p2-score').innerText = player2Score;
-        writeLog("<span class='status-win'>Steal Card Activated!</span> You successfully robbed 1 coin from Player 2.");
     }
 
-    function playRound(userChoice) {
-        if (isFlipping) return;
-        isFlipping = true;
-
-        // Freeze operational UI components
-        document.getElementById('btn-h').disabled = true;
-        document.getElementById('btn-t').disabled = true;
-
-        // Auto-Generate a simulated matchmaking choice for Player 2
-        const p2Choice = Math.random() < 0.5 ? 'Heads' : 'Tails';
-        
-        document.getElementById('p1-choice').innerText = `Picked: ${userChoice}`;
-        document.getElementById('p2-choice').innerText = `Picked: ${p2Choice}`;
-
-        writeLog(`Round locked. You picked ${userChoice}. Opponent picked ${p2Choice}. Flipping...`);
-
-        // Calculate Secure Cryptographic Provably Fair Engine Outcome
-        const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
-        
-        // Execute 3D Rotation Animation Equations
-        const baseRotation = outcome === 'Heads' ? 0 : 180;
-        const randomSpins = (Math.floor(Math.random() * 3) + 4) * 360; 
-        coin.style.transform = `rotateY(${randomSpins + baseRotation}deg)`;
+    function executeVisualFlip(outcome, pool, p1S, p2S) {
+        coinObj.style.animation = 'none';
+        coinObj.offsetHeight; // trigger reflow
+        const anim = outcome === 'Heads' ? 'spinHeads 2s forwards' : 'spinTails 2s forwards';
+        coinObj.style.animation = anim;
 
         setTimeout(() => {
-            // Process Core Game Scoring Logic Rules
-            let p1Earned = (userChoice === outcome) ? 1 : 0;
-            let p2Earned = (p2Choice === outcome) ? 1 : 0;
+            globalPool = pool;
+            myScore = p1S;
+            oppScore = p2S;
+            updateScores();
 
-            // Handle Lucky Win Streak Multipliers
-            if (p1Earned === 1) {
-                streakCount++;
-                if (streakCount === 3) {
-                    p1Earned += 10; // Bonus applied
-                    writeLog("<span class='status-win'>🔥 LUCKY STREAK!</span> 3 wins in a row triggers a bonus +10 coins!");
-                }
-            } else {
-                streakCount = 0;
-            }
+            log(`Flip Result: <b>${outcome}</b>`);
+            myChoice = null;
+            oppChoice = null;
+            document.getElementById('status-me').innerText = "Waiting...";
+            document.getElementById('status-opp').innerText = "Waiting...";
+            enableButtons();
+        }, 2000);
+    }
 
-            // Update scores and drain target pool
-            player1Score += p1Earned;
-            player2Score += p2Earned;
-            globalPool -= (p1Earned + p2Earned);
+    function useStealItem() {
+        if(oppScore > 0) {
+            document.getElementById('steal-btn').classList.add('used');
+            oppScore--;
+            myScore++;
+            updateScores();
+            conn.send({ type: 'STEAL' });
+            log("🃏 Steal card successfully triggered! You stole 1 coin from your opponent.");
+        }
+    }
 
-            // Print updates to the application interface
-            document.getElementById('p1-score').innerText = player1Score;
-            document.getElementById('p2-score').innerText = player2Score;
-            document.getElementById('pool-count').innerText = globalPool.toLocaleString();
+    function updateScores() {
+        document.getElementById('score-me').innerText = myScore;
+        document.getElementById('score-opp').innerText = oppScore;
+        document.getElementById('pool-disp').innerText = globalPool.toLocaleString();
+    }
 
-            // Display individual round resolution status alerts
-            if (p1Earned > 0) {
-                writeLog(`Result: <b>${outcome}</b>. <span class='status-win'>Success!</span> You claimed your reward from the pool.`);
-            } else {
-                writeLog(`Result: <b>${outcome}</b>. <span class='status-lose'>Incorrect call.</span> 0 coins earned.`);
-            }
-
-            // Reset operational input buttons
-            document.getElementById('btn-h').disabled = false;
-            document.getElementById('btn-t').disabled = false;
-            isFlipping = false;
-
-        }, 2000); // Syncs cleanly with the CSS transition length
+    function enableButtons() {
+        document.getElementById('btn-h').disabled = false;
+        document.getElementById('btn-t').disabled = false;
+    }
+    function disableButtons() {
+        document.getElementById('btn-h').disabled = true;
+        document.getElementById('btn-t').disabled = true;
     }
 </script>
 
 </body>
 </html>
-
