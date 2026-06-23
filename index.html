@@ -17,7 +17,6 @@
         .wrapper { background: #141b26; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 480px; padding: 25px; text-align: center; border: 1px solid #233044; position: relative; }
         h1 { color: #ffca28; margin: 0 0 5px; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Dashboard Stats Header */
         .account-bar { display: flex; justify-content: space-between; background: #1e2633; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; border: 1px solid #2d3a4f; }
         .accent-yellow { color: #ffca28; font-weight: bold; }
 
@@ -29,12 +28,10 @@
         .card.me { border-color: #ffca28; }
         .score { font-size: 28px; font-weight: bold; margin-top: 5px; }
         
-        /* 3D Coin Graphic and Skins */
         .coin-box { height: 140px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-bottom: 20px; }
         .coin { width: 95px; height: 95px; position: relative; transform-style: preserve-3d; }
         .face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 15px; box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 5px 15px rgba(0,0,0,0.5); text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
         
-        /* Premium & Rare Cosmetic Skins Matrix */
         .skin-gold .face.heads { background: linear-gradient(135deg, var(--coin-gold-1), var(--coin-gold-2)); color: #451a03; border: 5px solid var(--border-gold); }
         .skin-gold .face.tails { background: linear-gradient(135deg, #f1f5f9, #94a3b8); color: #0f172a; transform: rotateX(180deg); border: 5px solid #64748b; }
         .skin-ruby .face.heads { background: linear-gradient(135deg, var(--coin-ruby-1), var(--coin-ruby-2)); color: #fff; border: 5px solid var(--border-ruby); }
@@ -54,7 +51,6 @@
         .b-heads { background: #2563eb; } .b-tails { background: #ea580c; }
         button:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
         
-        /* Panel Boards */
         .setup-box { background: #1e2633; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; text-align: center; }
         .lobby-btn { width: 100%; padding: 12px; margin-top: 8px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; }
         .btn-random { background: #3b82f6; color: white; }
@@ -62,7 +58,6 @@
         .btn-quit { background: #ef4444; color: white; margin-top: 15px; font-size: 13px; padding: 8px; display: none; }
         input { width: 85%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; text-transform: uppercase; margin: 5px 0; }
         
-        /* Dedicated Shop Dashboard Box */
         .shop-container { background: #111827; border: 1px solid #ffca28; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .shop-item { background: #1e2633; padding: 10px; border-radius: 8px; border: 1px solid #374151; font-size: 12px; cursor: pointer; transition: 0.2s; }
@@ -77,7 +72,6 @@
         .item-deck.used { opacity: 0.3; cursor: not-allowed; }
         .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 11px; height: 75px; overflow-y: auto; color: #94a3b8; }
         
-        /* Win Modals */
         .win-screen { display: none; background: rgba(15, 23, 42, 0.95); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
         .win-title { font-size: 32px; color: #ffca28; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
@@ -105,7 +99,7 @@
     <div class="setup-box" id="lobby-ui">
         <button class="lobby-btn btn-random" id="btn-match-random" onclick="findRandomMatch()">⚡ Auto-Join Live Match (Entry: 10 Coins)</button>
         <div style="margin: 10px 0; color: #475569; font-size: 11px;">— PLAY WITH SPECIFIC FRIEND —</div>
-        <div style="font-size: 12px; color:#94a3b8;">Your Room ID: <b style="color: #ffca28; font-size: 16px;" id="my-id-display">----</b></div>
+        <div style="font-size: 12px; color:#94a3b8;">Your Room ID: <b style="color: #ffca28; font-size: 16px;" id="my-id-display">GENERATING...</b></div>
         <input type="text" id="join-id-input" maxlength="4" placeholder="Enter Friend's 4-Digit ID">
         <button class="lobby-btn btn-join" onclick="connectToFriend()">Join Private Room</button>
     </div>
@@ -150,4 +144,170 @@
         🃏 <b>Steal Card Powerup</b> (Rob 1 Point from Opponent)
     </div>
 
-    <div
+    <div class="btn-group">
+        <button class="b-heads" id="btn-h" onclick="makeChoice('Heads')" disabled>HEADS</button>
+        <button class="b-tails" id="btn-t" onclick="makeChoice('Tails')" disabled>TAILS</button>
+    </div>
+
+    <button class="btn-quit" id="btn-rage-quit" onclick="triggerRageQuit()">🏳️ Leave Match (Forfeit)</button>
+
+    <div class="logs" id="log-box">> Welcome to the Arena Dashboard. Ready up!</div>
+</div>
+
+<script>
+    let vaultCoins = parseInt(localStorage.getItem('cfa_coins')) || 100;
+    let unlockedSkins = JSON.parse(localStorage.getItem('cfa_skins')) || ['gold'];
+    let currentSkin = localStorage.getItem('cfa_activeskin') || 'gold';
+
+    function generateShortId() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let result = '';
+        for (let i = 0; i < 4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+        return result;
+    }
+
+    const shortRoomId = generateShortId();
+    
+    // FORCED RUN: Instantly display the code so the interface doesn't wait
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('my-id-display').innerText = shortRoomId.toUpperCase();
+        updateVaultDisplay();
+    });
+
+    let peer = new Peer('cfa-' + shortRoomId.toLowerCase(), { debug: 1 }); 
+    let conn = null;
+    let globalPool = 1000000;
+    let myScore = 0; let oppScore = 0;
+    let myChoice = null; let oppChoice = null;
+    let amIHost = false; let streak = 0;
+    let rematchRequested = false; let oppRematchRequested = false;
+
+    const logBox = document.getElementById('log-box');
+    const coinObj = document.getElementById('coin-obj');
+
+    function log(m) { logBox.innerHTML = `> ${m}<br>${logBox.innerHTML}`; }
+
+    function updateVaultDisplay() {
+        if(!document.getElementById('vault-coins')) return;
+        document.getElementById('vault-coins').innerText = vaultCoins;
+        localStorage.setItem('cfa_coins', vaultCoins);
+        localStorage.setItem('cfa_skins', JSON.stringify(unlockedSkins));
+        localStorage.setItem('cfa_activeskin', currentSkin);
+        
+        unlockedSkins.forEach(skin => {
+            const el = document.getElementById('shop-' + skin);
+            if(el && skin !== 'gold') el.innerHTML = `<span class="rarity-tag ${skin === 'tiger' ? 'rare' : skin === 'cosmic' ? 'mythic' : 'common'}">Unlocked</span><br><b>${skin.toUpperCase()} Skin</b><br><span style="color:#10b981;">Equip</span>`;
+            if(el && skin === currentSkin) el.style.borderColor = "#ffca28";
+        });
+        document.getElementById('active-skin-lbl').innerText = currentSkin.toUpperCase();
+        coinObj.className = `coin skin-${currentSkin}`;
+    }
+
+    function watchAdReward() {
+        log("🎬 Loading sponsored network ad premium pipeline...");
+        window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank"); 
+        setTimeout(() => {
+            vaultCoins += 15;
+            updateVaultDisplay();
+            log("💰 Ad tracked! +15 Premium Coins deposited safely into your account vault.");
+        }, 1200);
+    }
+
+    function buySkin(skin, cost) {
+        if(unlockedSkins.includes(skin)) { equipSkin(skin); return; }
+        if(vaultCoins >= cost) {
+            vaultCoins -= cost; unlockedSkins.push(skin); currentSkin = skin;
+            updateVaultDisplay(); log(`🎁 Successfully bought and equipped the premium ${skin.toUpperCase()} skin!`);
+        } else { log("⚠️ Insufficient Vault Balance! Use the watch ad engine."); }
+    }
+
+    function equipSkin(skin) {
+        if(!unlockedSkins.includes(skin)) return;
+        currentSkin = skin; updateVaultDisplay(); log(`Equipped ${skin.toUpperCase()} cosmetics.`);
+    }
+
+    peer.on('open', () => {
+        document.getElementById('my-id-display').innerText = shortRoomId.toUpperCase();
+        log("Network connection secure. Arena online.");
+    });
+
+    peer.on('connection', (connection) => {
+        if (conn) { connection.close(); return; } 
+        conn = connection; amIHost = true; setupNetworkTraffic();
+    });
+
+    function connectToFriend() {
+        let inputId = document.getElementById('join-id-input').value.trim().toLowerCase();
+        if(inputId.length !== 4) { log("⚠️ Please fill in a valid 4-digit ID."); return; }
+        if(vaultCoins < 10) { log("⚠️ Tournament entry costs 10 coins."); return; }
+        vaultCoins -= 10; updateVaultDisplay();
+        log(`Dialing room: ${inputId.toUpperCase()}...`);
+        conn = peer.connect('cfa-' + inputId); amIHost = false; setupNetworkTraffic();
+    }
+
+    function findRandomMatch() {
+        if(vaultCoins < 10) { log("⚠️ Tournament entry costs 10 coins."); return; }
+        document.getElementById('btn-match-random').innerText = "Scanning Active Lobbies... 📡";
+        
+        peer.listAllPeers((peers) => {
+            let activeGameRooms = peers.filter(pId => pId.startsWith('cfa-') && pId !== 'cfa-' + shortRoomId.toLowerCase());
+            vaultCoins -= 10; updateVaultDisplay();
+            
+            if (activeGameRooms.length > 0) {
+                let targetOpponent = activeGameRooms[0];
+                log("Live match discovered! Connecting to opponent arena room...");
+                conn = peer.connect(targetOpponent); amIHost = false; setupNetworkTraffic();
+            } else {
+                log("No active public boards open. Holding line as open host lobby...");
+                document.getElementById('btn-match-random').innerText = "Waiting for Challenger... ⏳";
+            }
+        });
+    }
+
+    function setupNetworkTraffic() {
+        conn.on('open', () => {
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('shop-ui').style.display = 'none';
+            document.getElementById('btn-rage-quit').style.display = 'block';
+            enableButtons(); log("⚔️ Live tournament match initialized! First to 7 Wins.");
+        });
+        
+        conn.on('data', (data) => {
+            if(data.type === 'CHOICE') { oppChoice = data.choice; document.getElementById('status-opp').innerText = "Locked In 🔒"; checkRoundResolution(); }
+            if(data.type === 'STEAL') { myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); log("🃏 Opponent used Steal Card!"); checkMatchStatus(); }
+            if(data.type === 'SYNC_FLIP') { executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); }
+            if(data.type === 'QUIT') { log("🏳️ Opponent has rage quit the match! Returning to lobby."); setTimeout(() => { resetToLobby(); }, 3000); }
+            if(data.type === 'REMATCH_REQ') { oppRematchRequested = true; log("🔄 Opponent requested a rematch!"); checkRematchTrigger(); }
+            if(data.type === 'REMATCH_START') { resetGameScores(); }
+        });
+
+        conn.on('close', () => { log("📡 Connection closed."); resetToLobby(); });
+    }
+
+    function triggerRageQuit() {
+        if(conn) { conn.send({ type: 'QUIT' }); setTimeout(() => { conn.close(); }, 500); }
+        resetToLobby();
+    }
+
+    function resetToLobby() {
+        conn = null; myScore = 0; oppScore = 0;
+        document.getElementById('lobby-ui').style.display = 'block';
+        document.getElementById('shop-ui').style.display = 'block';
+        document.getElementById('btn-rage-quit').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'none';
+        document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
+        updateScores(); disableButtons(); log("Returned safely to Dashboard Arena Lobby.");
+    }
+
+    function makeChoice(val) {
+        myChoice = val; document.getElementById('status-me').innerText = `Selected: ${val} 🔒`;
+        disableButtons(); conn.send({ type: 'CHOICE', choice: val }); checkRoundResolution();
+    }
+
+    function checkRoundResolution() {
+        if(myChoice && oppChoice && amIHost) {
+            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            let p1Win = (myChoice === outcome); let p2Win = (oppChoice === outcome);
+            if(p1Win) { myScore++; streak++; if(streak === 3) { myScore += 10; log("🔥 STREAK BONUS! +10"); } } else { streak = 0; }
+            if(p2Win) oppScore++;
+            globalPool -= (p1Win ? 1 : 0) + (p2Win ?
