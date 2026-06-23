@@ -83,67 +83,62 @@
 
 <div class="arena-card">
     <h1>Coin Flip Arena</h1>
-    <div class="pool-box">Global Pool: $<span id="pool-display">0</span></div>
+    <div class="pool-box">Your Balance: $<span id="balance-display">10000</span></div>
     
     <label>Bet Amount ($)</label>
     <input type="number" id="bet-input" value="10" min="1">
-    
-    <label>Your Client Seed (For Fairness Check)</label>
-    <input type="text" id="seed-input" value="lucky_player">
 
     <div class="btn-group">
         <button class="btn-heads" onclick="placeBet('Heads')">Heads</button>
         <button class="btn-tails" onclick="placeBet('Tails')">Tails</button>
     </div>
 
-    <div class="log-box" id="log-output">System initialized. Waiting for action...</div>
+    <div class="log-box" id="log-output">System initialized. Ready to flip!</div>
 </div>
 
 <script>
-    // Dynamically look at the address bar to connect to WebSockets securely
-    const socketProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const socketUrl = socketProtocol + window.location.host;
-    const socket = new WebSocket(socketUrl);
-
+    let playerBalance = 10000;
     const logBox = document.getElementById('log-output');
-    const poolDisplay = document.getElementById('pool-display');
+    const balanceDisplay = document.getElementById('balance-display');
 
     function log(message) {
         logBox.innerHTML = message + "<br>" + logBox.innerHTML;
     }
 
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'INIT') {
-            poolDisplay.innerText = data.poolBalance;
-        }
-
-        if (data.type === 'RESULT') {
-            poolDisplay.innerText = data.poolBalance;
-            log(`[RESULT] Coin landed on: <b>${data.outcome}</b>`);
-            log(`[HASH] ${data.hash.substring(0, 24)}...`);
-            log(`-----------------------------------`);
-        }
-    };
-
     function placeBet(playerChoice) {
-        const bet = document.getElementById('bet-input').value;
-        const seed = document.getElementById('seed-input').value;
+        const betInput = document.getElementById('bet-input');
+        const bet = Number(betInput.value);
 
-        if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({
-                type: 'FLIP',
-                choice: playerChoice,
-                betAmount: bet,
-                clientSeed: seed
-            }));
-            log(`Flipping for ${playerChoice} with $${bet}...`);
-        } else {
-            log(`Error: Connection closed. Please refresh.`);
+        if (bet > playerBalance) {
+            log(`[ERROR] Insufficient balance!`);
+            return;
         }
+        if (bet <= 0) {
+            log(`[ERROR] Invalid bet amount!`);
+            return;
+        }
+
+        log(`Flipping for ${playerChoice} with $${bet}...`);
+
+        // Perform the flip right here in the browser
+        setTimeout(() => {
+            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            const playerWon = (outcome === playerChoice);
+
+            if (playerWon) {
+                playerBalance += bet;
+                log(`[RESULT] Coin landed on: <b>${outcome}</b>. You WON $${bet}! 🎉`);
+            } else {
+                playerBalance -= bet;
+                log(`[RESULT] Coin landed on: <b>${outcome}</b>. You LOST $${bet}. 😢`);
+            }
+
+            balanceDisplay.innerText = playerBalance;
+            log(`-----------------------------------`);
+        }, 600); // Gives a brief pause to simulate the flip
     }
 </script>
 
 </body>
 </html>
+
