@@ -69,7 +69,7 @@
         .birr-tag { background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 5px; }
 
         .pay-modal { display: none; background: rgba(15, 23, 42, 0.98); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 20; padding: 20px; box-sizing: border-box; }
-        .pay-card { background: #1e2633; border: 1px solid #10b981; border-radius: 12px; padding: 15px; width: 90%; text-align: left; margin-bottom: 15px; }
+        .pay-card { background: #1e2633; border: 2px solid #10b981; border-radius: 12px; padding: 20px; width: 90%; text-align: left; margin-bottom: 15px; box-sizing: border-box; }
         
         .btn-ad { background: #a855f7; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 14px; }
         .item-deck { background: #1e2633; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 1px dashed #4b5563; font-size: 14px; }
@@ -93,18 +93,12 @@
 
     <div class="pay-modal" id="payment-modal">
         <h2 style="color:#10b981; margin:0 0 10px 0; text-transform:uppercase;">💸 Secure Checkout</h2>
-        <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">Transfer the exact amount to one of our wallets below:</p>
+        <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">Send the exact amount via Telebirr to the account below:</p>
         
         <div class="pay-card">
-            <div style="font-weight:bold; color:#ffca28;">📱 TELEBIRR</div>
-            <div style="font-size:13px; margin:4px 0;">Account Name: <b>YOUR NAME HERE</b></div>
-            <div style="font-size:15px; font-family:monospace; color:#10b981;">Phone: 09XXXXXXXX</div>
-        </div>
-
-        <div class="pay-card">
-            <div style="font-weight:bold; color:#38bdf8;">🏦 CBE BIRR / TRANSFER</div>
-            <div style="font-size:13px; margin:4px 0;">Commercial Bank of Ethiopia</div>
-            <div style="font-size:15px; font-family:monospace; color:#38bdf8;">Account: 1000XXXXXXXXX</div>
+            <div style="font-weight:bold; color:#ffca28; font-size:16px; margin-bottom:8px;">📱 TELEBIRR ONLY</div>
+            <div style="font-size:14px; margin:4px 0; color:#fff;">Account Name: <b>Situ</b></div>
+            <div style="font-size:18px; font-family:monospace; color:#10b981; font-weight:bold; margin-top:6px;">Number: 0911276442</div>
         </div>
 
         <div style="text-align: left; width: 90%; margin-bottom: 10px;">
@@ -225,7 +219,7 @@
     function submitTransactionReceipt() {
         let referenceId = document.getElementById('pay-ref-input').value.trim().toUpperCase();
         if (referenceId.length < 5) {
-            alert("Please enter a valid Telebirr or CBE transaction reference ID.");
+            alert("Please enter a valid Telebirr transaction reference ID.");
             return;
         }
         log(`💳 INSTANT VERIFICATION: Approved for ${currentPendingItem}. Ref: ${referenceId}`);
@@ -242,21 +236,13 @@
         updateVaultDisplay();
     }
 
-    // ICE SERVERS: Injected Metered global TURN relay servers to bypass strict router/mobile data firewalls
+    // Network setup utilizing open relay servers to bypass local firewall roadblocks
     const iceConfig = {
         'iceServers': [
             { 'urls': 'stun:stun.l.google.com:19302' },
             { 'urls': 'stun:stun1.l.google.com:19302' },
-            {
-                'urls': 'turn:openrelay.metered.ca:443',
-                'username': 'openrelayproject',
-                'credential': 'openrelayproject'
-            },
-            {
-                'urls': 'turn:openrelay.metered.ca:80',
-                'username': 'openrelayproject',
-                'credential': 'openrelayproject'
-            }
+            { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+            { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
         ]
     };
 
@@ -274,7 +260,6 @@
         } catch(e) {}
     }
 
-    /* MASTER CHANNELS WITH RELAY FALLBACKS */
     function findRandomMatch() {
         if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
         
