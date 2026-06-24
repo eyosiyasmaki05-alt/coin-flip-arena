@@ -3,21 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coin Flip Arena - Championship Dashboard</title>
+    <title>Coin Flip Arena - Supabase Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --coin-gold-1: #ffe066; --coin-gold-2: #f59e0b; --border-gold: #d9a700;
             --coin-ruby-1: #ff6b6b; --coin-ruby-2: #dc2626; --border-ruby: #991b1b;
             --coin-diamond-1: #93c5fd; --coin-diamond-2: #2563eb; --border-diamond: #1e40af;
-            --coin-tiger-1: #fb923c; --coin-tiger-2: #ea580c; --border-tiger: #7c2d12;
-            --coin-cosmic-1: #c084fc; --coin-cosmic-2: #6b21a8; --border-cosmic: #4c1d95;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b0f17; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .wrapper { background: #141b26; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 480px; padding: 25px; text-align: center; border: 1px solid #233044; position: relative; }
+        .wrapper { background: #141b26; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 520px; padding: 25px; text-align: center; border: 1px solid #233044; position: relative; overflow: hidden; }
         h1 { color: #ffca28; margin: 0 0 5px; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .account-bar { display: flex; justify-content: space-between; background: #1e2633; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; border: 1px solid #2d3a4f; }
+        .auth-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#141b26; border-radius:20px; z-index:100; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; box-sizing:border-box; }
+        .auth-toggle { font-size:12px; color:#38bdf8; cursor:pointer; text-decoration:underline; margin-top:15px; }
+
+        .admin-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:20px; z-index:90; display:none; flex-direction:column; padding:20px; box-sizing:border-box; overflow-y:auto; text-align: left; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .admin-stat-card { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .admin-stat-val { font-size: 20px; font-weight: bold; color: #10b981; font-family: monospace; }
+        .user-row-item { display: flex; justify-content: space-between; background: #1e2633; padding: 8px; border-radius: 6px; font-size: 11px; margin-bottom: 5px; border: 1px solid #2d3a4f; align-items: center; }
+        
+        .account-bar { display: flex; flex-direction: column; background: #1e2633; padding: 12px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border: 1px solid #2d3a4f; text-align: left; gap: 4px; }
+        .profile-row { display: flex; justify-content: space-between; align-items: center; }
         .accent-yellow { color: #ffca28; font-weight: bold; }
 
         .pool { background: #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 20px; border: 1px solid #334155; }
@@ -34,14 +43,6 @@
         
         .skin-gold .face.heads { background: linear-gradient(135deg, var(--coin-gold-1), var(--coin-gold-2)); color: #451a03; border: 5px solid var(--border-gold); }
         .skin-gold .face.tails { background: linear-gradient(135deg, #f1f5f9, #94a3b8); color: #0f172a; transform: rotateX(180deg); border: 5px solid #64748b; }
-        .skin-ruby .face.heads { background: linear-gradient(135deg, var(--coin-ruby-1), var(--coin-ruby-2)); color: #fff; border: 5px solid var(--border-ruby); }
-        .skin-ruby .face.tails { background: linear-gradient(135deg, #374151, #111827); color: #fff; transform: rotateX(180deg); border: 5px solid #000; }
-        .skin-diamond .face.heads { background: linear-gradient(135deg, var(--coin-diamond-1), var(--coin-diamond-2)); color: #fff; border: 5px solid var(--border-diamond); }
-        .skin-diamond .face.tails { background: linear-gradient(135deg, #f8fafc, #cbd5e1); color: #1e293b; transform: rotateX(180deg); border: 5px solid #94a3b8; }
-        .skin-tiger .face.heads { background: linear-gradient(135deg, var(--coin-tiger-1), var(--coin-tiger-2)); color: #fff; border: 5px solid var(--border-tiger); box-shadow: inset 0 0 15px #7c2d12, 0 4px 10px rgba(0,0,0,0.5); }
-        .skin-tiger .face.tails { background: #1e293b; color: #fb923c; transform: rotateX(180deg); border: 5px solid var(--border-tiger); }
-        .skin-cosmic .face.heads { background: linear-gradient(135deg, var(--coin-cosmic-1), var(--coin-cosmic-2)); color: #fff; border: 5px solid var(--border-cosmic); }
-        .skin-cosmic .face.tails { background: #090d14; color: #c084fc; transform: rotateX(180deg); border: 5px solid var(--border-cosmic); }
 
         @keyframes spinHeads { from { transform: rotateX(0); } to { transform: rotateX(2160deg); } }
         @keyframes spinTails { from { transform: rotateX(0); } to { transform: rotateX(2340deg); } }
@@ -56,85 +57,91 @@
         .btn-random { background: #3b82f6; color: white; }
         .btn-join { background: #10b981; color: white; }
         .btn-quit { background: #ef4444; color: white; margin-top: 15px; font-size: 13px; padding: 8px; display: none; }
-        input { width: 85%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; text-transform: uppercase; margin: 5px 0; }
-        
-        .shop-container { background: #111827; border: 1px solid #ffca28; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .shop-item { background: #1e2633; padding: 10px; border-radius: 8px; border: 1px solid #374151; font-size: 12px; cursor: pointer; transition: 0.2s; }
-        .shop-item:hover { border-color: #ffca28; background: #243044; }
-        .rarity-tag { font-size: 9px; font-weight: bold; text-transform: uppercase; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
-        .rare { background: #ea580c; color: white; }
-        .mythic { background: #a855f7; color: white; }
-        .common { background: #6b7280; color: white; }
-        .birr-tag { background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 5px; }
-
-        .pay-modal { display: none; background: rgba(15, 23, 42, 0.98); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 20; padding: 20px; box-sizing: border-box; }
-        .pay-card { background: #1e2633; border: 2px solid #10b981; border-radius: 12px; padding: 20px; width: 90%; text-align: left; margin-bottom: 15px; box-sizing: border-box; }
-        
+        input { width: 85%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; margin: 5px 0; }
         .btn-ad { background: #a855f7; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 14px; }
-        .item-deck { background: #1e2633; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 1px dashed #4b5563; font-size: 14px; }
-        .item-deck.used { opacity: 0.3; cursor: not-allowed; }
         .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 11px; height: 100px; overflow-y: auto; color: #10b981; border: 1px solid #1e293b; }
-        
         .win-screen { display: none; background: rgba(15, 23, 42, 0.95); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
-        .win-title { font-size: 32px; color: #ffca28; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .win-title { font-size: 32px; color: #ffca28; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <div class="win-screen" id="end-screen">
-        <div class="win-title" id="win-banner">YOU WIN!</div>
-        <p style="color: #94a3b8; margin-bottom: 20px;" id="win-subtitle">First to 7 Victory</p>
-        <button class="lobby-btn btn-join" id="btn-rematch" onclick="requestRematch()">Request Rematch</button>
-        <button class="lobby-btn btn-quit" id="btn-return" style="display:block;" onclick="triggerRageQuit()">Return to Lobby</button>
+    
+    <div class="auth-overlay" id="auth-screen">
+        <h2 id="auth-title" style="color:#ffca28; margin-bottom:5px;">CHAMPION PROFILE ACCESS</h2>
+        <p id="auth-desc" style="font-size:12px; color:#a1a1aa; margin-bottom:20px;">Register your profile identity via Supabase Engine</p>
+        
+        <input type="email" id="auth-email" placeholder="Email Address">
+        <input type="password" id="auth-password" placeholder="Password (Min 6 chars)">
+        <input type="text" id="auth-phone" placeholder="Phone Number (e.g. 0911...)">
+        
+        <button class="lobby-btn btn-join" id="btn-auth-action" onclick="handleAuthSubmit()" style="margin-top:15px; padding:14px;">Sign Up & Initialize Account</button>
+        <div class="auth-toggle" id="auth-toggle-btn" onclick="toggleAuthMode()">Already registered? Switch to Login</div>
     </div>
 
-    <div class="pay-modal" id="payment-modal">
-        <h2 style="color:#10b981; margin:0 0 10px 0; text-transform:uppercase;">💸 Secure Checkout</h2>
-        <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">Send the exact amount via Telebirr to the account below:</p>
+    <div class="admin-overlay" id="admin-panel-view">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #334155; padding-bottom:10px;">
+            <h2 style="color:#ffca28; margin:0; font-size:20px;">💼 BACK-OFFICE OPERATIONS</h2>
+            <button onclick="closeAdminView()" style="background:#ef4444; padding:5px 10px; font-size:12px; border-radius:5px; flex:none; width:auto;">Exit Panel</button>
+        </div>
         
-        <div class="pay-card">
-            <div style="font-weight:bold; color:#ffca28; font-size:16px; margin-bottom:8px;">📱 TELEBIRR ONLY</div>
-            <div style="font-size:14px; margin:4px 0; color:#fff;">Account Name: <b>Situ</b></div>
-            <div style="font-size:18px; font-family:monospace; color:#10b981; font-weight:bold; margin-top:6px;">Number: 0911276442</div>
+        <div class="admin-grid">
+            <div class="admin-stat-card">
+                <div style="font-size:10px; color:#94a3b8;">TOTAL SYSTEM PROFILES</div>
+                <div class="admin-stat-val" id="stat-total-users">0</div>
+            </div>
+            <div class="admin-stat-card">
+                <div style="font-size:10px; color:#94a3b8;">RESERVE TARGET CAPACITY</div>
+                <div class="admin-stat-val" style="color:#38bdf8;" id="stat-pool-val">1.0M</div>
+            </div>
         </div>
 
-        <div style="text-align: left; width: 90%; margin-bottom: 10px;">
-            <label style="font-size: 11px; color:#94a3b8; display:block;">ENTER TRANSACTION REFERENCE ID (TXN):</label>
-            <input type="text" id="pay-ref-input" placeholder="e.g. FT26XXXXXXXX" style="width:100%; box-sizing:border-box; text-transform:uppercase;">
+        <h3 style="color:#ffca28; font-size:14px; margin-bottom:8px;">⚙️ GLOBAL CONTROL KNOBS</h3>
+        <div style="background:#1e293b; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #334155;">
+            <label style="font-size:11px; color:#94a3b8; display:block; margin-bottom:4px;">RESERVE POOL AMOUNT:</label>
+            <input type="number" id="admin-pool-input" value="1000000" style="width:100%; box-sizing:border-box; margin-bottom:10px; text-align:left;">
+            <button class="lobby-btn btn-join" style="margin:0;" onclick="updateGlobalPoolConfig()">Commit System Changes</button>
         </div>
 
-        <button class="lobby-btn btn-join" onclick="submitTransactionReceipt()" style="margin-top:5px;">Submit Order Verification</button>
-        <button class="lobby-btn btn-quit" onclick="closeCheckoutShop()" style="display:block; background:#374151;">Cancel Payment</button>
+        <h3 style="color:#10b981; font-size:14px; margin-bottom:8px;">👥 COMPREHENSIVE USER DIRECTORY</h3>
+        <input type="text" id="admin-user-search" oninput="filterUserAdminDirectory()" placeholder="Filter profiles by phone or email..." style="width:100%; text-align:left; box-sizing:border-box; margin-bottom:10px;">
+        <div id="admin-users-list" style="max-height:180px; overflow-y:auto; background:#090d14; padding:8px; border-radius:8px;"></div>
+    </div>
+
+    <div class="win-screen" id="end-screen">
+        <div class="win-title" id="win-banner">YOU WIN!</div>
+        <button class="lobby-btn btn-return" style="display:block; background:#3b82f6;" onclick="resetToLobby()">Return to Lobby</button>
     </div>
 
     <h1>Coin Flip Arena</h1>
     
     <div class="account-bar">
-        <div>Vault: <span class="accent-yellow" id="vault-coins">100</span> Coins</div>
-        <div>Active Skin: <span id="active-skin-lbl" style="color:#ffca28; font-weight:bold;">GOLD</span></div>
+        <div class="profile-row">
+            <div>Profile ID: <span id="profile-uid-lbl" style="color:#38bdf8; font-weight:bold;">Loading...</span></div>
+            <div style="display:flex; gap:10px;">
+                <span id="admin-access-btn" style="color:#10b981; font-weight:bold; cursor:pointer; font-size:11px; display:none;" onclick="openAdminView()">[Admin Panel]</span>
+                <span style="color:#ef4444; font-weight:bold; cursor:pointer; font-size:11px;" onclick="handleLogOut()">[Log Out]</span>
+            </div>
+        </div>
+        <div class="profile-row">
+            <div>Phone Trace: <span id="profile-phone-lbl" style="color:#a1a1aa;">None</span></div>
+        </div>
+        <hr style="border:0; border-top:1px solid #2d3a4f; margin:6px 0;">
+        <div class="profile-row">
+            <div>Vault: <span class="accent-yellow" id="vault-coins">100</span> Coins</div>
+            <div>Active Skin: <span id="active-skin-lbl" style="color:#ffca28; font-weight:bold;">GOLD</span></div>
+        </div>
     </div>
 
-    <button class="btn-ad" id="main-ad-btn" onclick="watchAdReward()">📺 Watch Free Ad (+15 Coins)</button>
+    <button class="btn-ad" onclick="watchAdReward()">📺 Watch Free Ad (+15 Coins)</button>
     
     <div class="setup-box" id="lobby-ui">
         <button class="lobby-btn btn-random" id="btn-match-random" onclick="findRandomMatch()">⚡ Auto-Join Live Match (Entry: 10 Coins)</button>
         <div style="margin: 10px 0; color: #475569; font-size: 11px;">— PLAY WITH SPECIFIC FRIEND —</div>
         <div style="font-size: 12px; color:#94a3b8;">Your Room ID: <b style="color: #ffca28; font-size: 16px;" id="my-id-display">LOADING...</b></div>
-        <input type="text" id="join-id-input" maxlength="4" placeholder="Enter Friend's 4-Digit ID">
-        <button class="lobby-btn btn-join" id="btn-join-private" onclick="connectToFriend()">Join Private Room</button>
-    </div>
-
-    <div class="shop-container" id="shop-ui">
-        <div style="font-size: 14px; font-weight:bold; color:#ffca28; text-transform: uppercase; letter-spacing: 0.5px;">🛒 Premium Coin & Skin Store</div>
-        <div class="shop-grid">
-            <div class="shop-item" onclick="openCheckoutShop('100 Coins', '20 Birr')"><span class="rarity-tag common">Pack</span><br><b>100 Coins Vault</b><br><span class="birr-tag">20 ETB</span></div>
-            <div class="shop-item" onclick="openCheckoutShop('500 Coins', '80 Birr')"><span class="rarity-tag rare">Value🔥</span><br><b>500 Coins Chest</b><br><span class="birr-tag">80 ETB</span></div>
-            <div class="shop-item" onclick="openCheckoutShop('Ruby Skin', '50 Birr')"><span class="rarity-tag common">Skin</span><br><b>Ruby Skin Asset</b><br><span class="birr-tag">50 ETB</span></div>
-            <div class="shop-item" onclick="openCheckoutShop('Cosmic Nexus', '150 Birr')"><span class="rarity-tag mythic">Mythic💎</span><br><b>Cosmic Nexus Skin</b><br><span class="birr-tag">150 ETB</span></div>
-        </div>
+        <input type="text" id="join-id-input" maxlength="4" placeholder="Enter Friend's 4-Digit ID" style="text-transform: uppercase;">
+        <button class="lobby-btn btn-join" onclick="connectToFriend()">Join Private Room</button>
     </div>
 
     <div class="pool">
@@ -162,24 +169,31 @@
         </div>
     </div>
 
-    <div class="item-deck" id="steal-btn" onclick="useStealItem()">
-        🃏 <b>Steal Card Powerup</b> (Rob 1 Point from Opponent)
-    </div>
-
     <div class="btn-group">
         <button class="b-heads" id="btn-h" onclick="makeChoice('Heads')" disabled>HEADS</button>
         <button class="b-tails" id="btn-t" onclick="makeChoice('Tails')" disabled>TAILS</button>
     </div>
 
     <button class="btn-quit" id="btn-rage-quit" onclick="triggerRageQuit()">🏳️ Leave Match (Forfeit)</button>
-
-    <div class="logs" id="log-box">> Systems initialized. Ready.</div>
+    <div class="logs" id="log-box">> System online via Supabase gateway.</div>
 </div>
 
 <script>
-    let vaultCoins = parseInt(localStorage.getItem('cfa_coins')) || 100;
-    let unlockedSkins = JSON.parse(localStorage.getItem('cfa_skins')) || ['gold'];
-    let currentSkin = localStorage.getItem('cfa_activeskin') || 'gold';
+    // 🔌 LIVE BACKEND CONFIGURATION KEYS
+    const SUPABASE_URL = "https://sncdpgncqqrgjezuasin.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuY2RwZ25jcXFyZ2plenVhc2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDQ1OTQsImV4cCI6MjA5Nzg4MDU5NH0.lipuz-wfwye08DTaCUTdMGPZ7a3JgA5wfvgYzorlEOo";
+
+    // 👑 DESIGNATE ADMIN EMAIL FOR DASHBOARD CONTROLS HERE
+    const PLATFORM_ADMIN_EMAIL = "admin@coinarena.com";
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let isSignUpMode = true;
+    let cachedUsersArray = [];
+    let vaultCoins = 100;
+    let currentSkin = 'gold';
+    let userPhoneNumber = "Unassigned";
+    let myUid = null;
 
     function generateShortId() {
         const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -191,293 +205,170 @@
     const shortRoomId = generateShortId();
     let peer = null; let conn = null; let globalPool = 1000000;
     let myScore = 0; let oppScore = 0; let myChoice = null; let oppChoice = null;
-    let amIHost = false; let streak = 0; let rematchRequested = false; let oppRematchRequested = false;
-    let currentPendingItem = ""; let currentPendingPrice = "";
-    let syncIntervalId = null;
+    let amIHost = false;
 
     const logBox = document.getElementById('log-box');
     const coinObj = document.getElementById('coin-obj');
 
     function log(m) { if(logBox) logBox.innerHTML = `> ${m}<br>${logBox.innerHTML}`; }
 
-    window.onload = function() {
-        document.getElementById('my-id-display').innerText = shortRoomId.toUpperCase();
-        updateVaultDisplay();
-        initPeerEngine();
-    };
-
-    function openCheckoutShop(itemName, price) {
-        currentPendingItem = itemName;
-        currentPendingPrice = price;
-        document.getElementById('pay-ref-input').value = "";
-        document.getElementById('payment-modal').style.display = 'flex';
-    }
-
-    function closeCheckoutShop() {
-        document.getElementById('payment-modal').style.display = 'none';
-    }
-
-    function submitTransactionReceipt() {
-        let referenceId = document.getElementById('pay-ref-input').value.trim().toUpperCase();
-        if (referenceId.length < 5) {
-            alert("Please enter a valid Telebirr transaction reference ID.");
-            return;
+    // INITIAL SETUP SESSION VERIFICATION
+    async function checkActiveSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            myUid = session.user.id;
+            document.getElementById('auth-screen').style.display = 'none';
+            if(session.user.email === PLATFORM_ADMIN_EMAIL) {
+                document.getElementById('admin-access-btn').style.display = 'inline';
+            }
+            loadAndSyncProfile(session.user.email);
+        } else {
+            document.getElementById('auth-screen').style.display = 'flex';
         }
-        log(`💳 Verification Approved. Ref: ${referenceId}`);
-        triggerAdminCredit(currentPendingItem);
-        closeCheckoutShop();
+    }
+    checkActiveSession();
+
+    async function loadAndSyncProfile(email) {
+        let { data: profile } = await supabase.from('profiles').select('*').eq('id', myUid).maybeSingle();
+        if(!profile) {
+            let phone = document.getElementById('auth-phone').value.trim() || "Not linked";
+            const { data: newProf } = await supabase.from('profiles').insert([{ id: myUid, email, phone_number: phone, coins: 100 }]).select().single();
+            profile = newProf;
+        }
+
+        vaultCoins = profile.coins;
+        userPhoneNumber = profile.phone_number;
+        document.getElementById('profile-uid-lbl').innerText = email.split('@')[0].toUpperCase();
+        document.getElementById('profile-phone-lbl').innerText = userPhoneNumber;
+        document.getElementById('vault-coins').innerText = vaultCoins;
+        initPeerEngine();
     }
 
-    function triggerAdminCredit(item) {
-        if (item === "100 Coins") vaultCoins += 100;
-        else if (item === "500 Coins") vaultCoins += 500;
-        else if (item === "Ruby Skin") { if (!unlockedSkins.includes('ruby')) unlockedSkins.push('ruby'); currentSkin = 'ruby'; }
-        else if (item === "Cosmic Nexus") { if (!unlockedSkins.includes('cosmic')) unlockedSkins.push('cosmic'); currentSkin = 'cosmic'; }
-        updateVaultDisplay();
-        alert("💥 Assets successfully added to account profile!");
+    function toggleAuthMode() {
+        isSignUpMode = !isSignUpMode;
+        document.getElementById('auth-phone').style.display = isSignUpMode ? "block" : "none";
+        document.getElementById('btn-auth-action').innerText = isSignUpMode ? "Sign Up & Initialize Account" : "Verify Login Profile";
     }
 
-    // MULTI-SERVER PUBLIC BACKUP STUN ARCHITECTURE
-    // Using explicit high-availability public servers ensures compatibility with mobile data carriers
-    const iceConfig = {
-        'iceServers': [
-            { 'urls': 'stun:stun.l.google.com:19302' },
-            { 'urls': 'stun:stun1.l.google.com:19302' },
-            { 'urls': 'stun:stun2.l.google.com:19302' },
-            { 'urls': 'stun:stun.services.mozilla.com' }
-        ]
-    };
+    async function handleAuthSubmit() {
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        if(!email || password.length < 6) { alert("Invalid entry formatting rules."); return; }
 
+        if(isSignUpMode) {
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) alert(error.message); else window.location.reload();
+        } else {
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message); else window.location.reload();
+        }
+    }
+
+    async function handleLogOut() { await supabase.auth.signOut(); window.location.reload(); }
+
+    async function updateVaultDisplay() {
+        document.getElementById('vault-coins').innerText = vaultCoins;
+        await supabase.from('profiles').update({ coins: vaultCoins }).eq('id', myUid);
+    }
+
+    /* 💼 OPERATIONS DASHBOARD LAYER */
+    async function openAdminView() {
+        document.getElementById('admin-panel-view').style.display = "flex";
+        let { data: users } = await supabase.from('profiles').select('*');
+        cachedUsersArray = users || [];
+        document.getElementById('stat-total-users').innerText = cachedUsersArray.length;
+        renderUserListDirectory(cachedUsersArray);
+    }
+    function closeAdminView() { document.getElementById('admin-panel-view').style.display = "none"; }
+
+    function renderUserListDirectory(array) {
+        const listContainer = document.getElementById('admin-users-list');
+        listContainer.innerHTML = "";
+        array.forEach(u => {
+            const item = document.createElement('div');
+            item.className = "user-row-item";
+            item.innerHTML = `
+                <div><b>${u.email}</b><br><span style="color:#94a3b8;">Phone: ${u.phone_number}</span> | <span style="color:#ffca28;">Coins: ${u.coins}</span></div>
+                <button onclick="modifyUserBalanceAdmin('${u.id}', ${u.coins})" style="background:#10b981; padding:4px 8px; font-size:10px; width:auto; flex:none;">+500</button>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    function filterUserAdminDirectory() {
+        let q = document.getElementById('admin-user-search').value.toLowerCase();
+        let f = cachedUsersArray.filter(u => u.email.toLowerCase().includes(q) || (u.phone_number && u.phone_number.includes(q)));
+        renderUserListDirectory(f);
+    }
+
+    async function modifyUserBalanceAdmin(uid, currentCoins) {
+        await supabase.from('profiles').update({ coins: currentCoins + 500 }).eq('id', uid);
+        openAdminView();
+    }
+
+    function updateGlobalPoolConfig() {
+        globalPool = parseInt(document.getElementById('admin-pool-input').value);
+        document.getElementById('pool-disp').innerText = globalPool.toLocaleString();
+        document.getElementById('stat-pool-val').innerText = (globalPool / 1000000).toFixed(2) + "M";
+        alert("Global config values synchronized.");
+    }
+
+    /* 🎰 WEBRTC STREAM ENGINE CHANNELS */
     function initPeerEngine() {
-        try {
-            if (peer) { peer.destroy(); }
-            peer = new Peer('cfa-' + shortRoomId.toLowerCase(), { debug: 1, config: iceConfig });
-            
-            peer.on('open', (id) => { 
-                log(`📡 Connected to cloud grid. ID: ${shortRoomId.toUpperCase()}`); 
-            });
-            
-            peer.on('connection', (incomingConn) => {
-                // If already in a session, safely refuse duplicate traffic
-                if (conn && conn.open) { incomingConn.close(); return; }
-                log("⚡ Incoming pairing request caught! Accepting payload stream...");
-                conn = incomingConn; amIHost = true; setupNetworkTraffic();
-            });
-
-            peer.on('error', (err) => {
-                log(`❌ Network Engine Alert: ${err.type}`);
-                if(err.type === 'unavailable-id') { 
-                    setTimeout(() => { window.location.reload(); }, 800); 
-                }
-            });
-        } catch(e) { log(`System Crash Error: ${e.message}`); }
+        peer = new Peer('cfa-' + shortRoomId.toLowerCase(), { debug: 1 });
+        peer.on('open', () => { document.getElementById('my-id-display').innerText = shortRoomId.toUpperCase(); });
+        peer.on('connection', (i) => { conn = i; amIHost = true; setupNetworkTraffic(); });
     }
-
     function connectToFriend() {
-        let inputId = document.getElementById('join-id-input').value.trim().toUpperCase();
-        if(inputId.length !== 4) { log("⚠️ Invalid 4-digit token code."); return; }
-        if(vaultCoins < 10) { log("⚠️ Insufficient coins vault balance."); return; }
-        
-        log(`🔗 Directly pairing to structural pipeline: ${inputId}...`);
-        
-        // Safety disconnect current active state
-        if(conn) { try { conn.close(); } catch(e){} }
-        
-        amIHost = false;
-        conn = peer.connect('cfa-' + inputId.toLowerCase(), { reliable: true });
+        let id = document.getElementById('join-id-input').value.trim().toLowerCase();
+        if(id.length !== 4 || vaultCoins < 10) return;
+        amIHost = false; conn = peer.connect('cfa-' + id); setupNetworkTraffic();
+    }
+    function findRandomMatch() {
+        if(vaultCoins < 10) return;
+        let hub = 'cfa-lobby-global-hub'; conn = peer.connect(hub); amIHost = false;
         setupNetworkTraffic();
     }
-
-    function findRandomMatch() {
-        if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
-        let btn = document.getElementById('btn-match-random');
-        btn.innerText = "Connecting... ⚡";
-        btn.disabled = true;
-
-        const lobbyHub = 'cfa-lobby-global-hub';
-        log("🛰️ Scanning matchmaking array via cloud relay...");
-
-        let targetConn = peer.connect(lobbyHub, { reliable: true });
-        let timeoutTimer = setTimeout(() => {
-            targetConn.close();
-            log("Pool empty. Registering your device as Master host node... 👑");
-            btn.innerText = "Hosting Room... ⏳";
-            
-            if (peer) peer.destroy();
-            setTimeout(() => {
-                peer = new Peer(lobbyHub, { debug: 1, config: iceConfig });
-                peer.on('open', () => { amIHost = true; log("👑 Hosted via Relay channel. Waiting for player..."); });
-                peer.on('connection', (incoming) => { conn = incoming; setupNetworkTraffic(); });
-            }, 300);
-        }, 3000);
-
-        targetConn.on('open', () => {
-            clearTimeout(timeoutTimer);
-            conn = targetConn; amIHost = false;
-            setupNetworkTraffic();
-        });
-    }
-
     function setupNetworkTraffic() {
-        if(!conn) return;
-
-        // Clean up any stale heartbeat intervals
-        if(syncIntervalId) clearInterval(syncIntervalId);
-
         conn.on('open', () => {
-            log("🤝 Handshake synchronized! Unlocking match arena dashboards...");
             vaultCoins -= 10; updateVaultDisplay();
-            
-            document.getElementById('lobby-ui').style.display = 'none';
-            document.getElementById('shop-ui').style.display = 'none';
-            document.getElementById('btn-rage-quit').style.display = 'block';
-            document.getElementById('status-me').innerText = "Active";
-            document.getElementById('status-opp').innerText = "Active";
+            document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
             enableButtons();
-
-            // Auto-heartbeat sync every second to keep connection alive
-            syncIntervalId = setInterval(() => {
-                if(conn && conn.open) conn.send({ type: 'HEARTBEAT' });
-            }, 1000);
         });
-
-        conn.on('data', (data) => {
-            if(data.type === 'CHOICE') { 
-                oppChoice = data.choice; 
-                document.getElementById('status-opp').innerText = "Locked In 🔒"; 
-                checkRoundResolution(); 
-            }
-            if(data.type === 'SYNC_FLIP') { 
-                executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); 
-            }
-            if(data.type === 'STEAL') { 
-                myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); 
-                log("🃏 Opponent used Steal Card!"); checkMatchStatus(); 
-            }
-            if(data.type === 'QUIT') { 
-                log("🏳️ Opponent dropped connection."); resetToLobby(); 
-            }
-            if(data.type === 'REMATCH_REQ') { 
-                oppRematchRequested = true; log("🔄 Opponent wants rematch."); checkRematchTrigger(); 
-            }
-            if(data.type === 'REMATCH_START') { 
-                resetGameScores(); 
-            }
+        conn.on('data', (d) => {
+            if(d.type === 'CHOICE') { oppChoice = d.choice; checkRoundResolution(); }
+            if(d.type === 'SYNC_FLIP') executeVisualFlip(d.outcome, d.hScore, d.tScore);
+            if(d.type === 'QUIT') resetToLobby();
         });
-        
-        conn.on('close', () => { log("🛑 Peer disconnected pipe connection."); resetToLobby(); });
-        conn.on('error', (e) => { log(`⚠️ Stream error: ${e.message}`); resetToLobby(); });
     }
-
-    function makeChoice(val) {
-        myChoice = val; 
-        document.getElementById('status-me').innerText = `${val} 🔒`;
-        disableButtons(); 
-        if(conn && conn.open) conn.send({ type: 'CHOICE', choice: val }); 
-        checkRoundResolution();
-    }
-
+    function makeChoice(v) { myChoice = v; disableButtons(); if(conn) conn.send({ type: 'CHOICE', choice: v }); checkRoundResolution(); }
     function checkRoundResolution() {
         if(myChoice && oppChoice && amIHost) {
-            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
-            let p1Win = (myChoice === outcome); let p2Win = (oppChoice === outcome);
-            if(p1Win) { myScore++; streak++; if(streak === 3) { myScore += 10; log("🔥 STREAK BONUS! +10"); } } else { streak = 0; }
-            if(p2Win) oppScore++; globalPool -= (p1Win ? 1 : 0) + (p2Win ? 1 : 0);
-            
-            executeVisualFlip(outcome, globalPool, myScore, oppScore);
-            if(conn && conn.open) conn.send({ type: 'SYNC_FLIP', outcome, pool: globalPool, hScore: oppScore, tScore: myScore });
+            const out = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            if(myChoice === out) myScore++; if(oppChoice === out) oppScore++;
+            executeVisualFlip(out, myScore, oppScore);
+            if(conn) conn.send({ type: 'SYNC_FLIP', outcome: out, hScore: oppScore, tScore: myScore });
         }
     }
-
-    function executeVisualFlip(outcome, pool, p1S, p2S) {
-        coinObj.style.animation = 'none'; coinObj.offsetHeight; 
-        coinObj.style.animation = outcome === 'Heads' ? 'spinHeads 2s forwards' : 'spinTails 2s forwards';
+    function executeVisualFlip(out, p1, p2) {
+        coinObj.style.animation = out === 'Heads' ? 'spinHeads 2s forwards' : 'spinTails 2s forwards';
         setTimeout(() => {
-            globalPool = pool; myScore = p1S; oppScore = p2S; updateScores();
-            log(`Flip Result: <b>${outcome}</b>`); myChoice = null; oppChoice = null;
-            if(!checkMatchStatus()) {
-                document.getElementById('status-me').innerText = "Active"; 
-                document.getElementById('status-opp').innerText = "Active";
-                enableButtons();
-            }
+            myScore = p1; oppScore = p2;
+            document.getElementById('score-me').innerText = myScore; document.getElementById('score-opp').innerText = oppScore;
+            myChoice = null; oppChoice = null;
+            if(myScore >= 7 || oppScore >= 7) {
+                document.getElementById('end-screen').style.display = 'flex';
+                document.getElementById('win-banner').innerText = myScore >= 7 ? "YOU WIN!" : "DEFEAT!";
+            } else { enableButtons(); }
         }, 2000);
     }
-
-    function checkMatchStatus() {
-        if(myScore >= 7 || oppScore >= 7) {
-            disableButtons(); document.getElementById('end-screen').style.display = 'flex';
-            document.getElementById('btn-rematch').disabled = false;
-            if(myScore >= 7) { document.getElementById('win-banner').innerText = "YOU WIN!"; document.getElementById('win-banner').style.color = "#ffca28"; } 
-            else { document.getElementById('win-banner').innerText = "DEFEAT!"; document.getElementById('win-banner').style.color = "#ef4444"; }
-            return true;
-        }
-        return false;
-    }
-
-    function requestRematch() {
-        rematchRequested = true; document.getElementById('btn-rematch').innerText = "Waiting... 🔄";
-        document.getElementById('btn-rematch').disabled = true; if(conn) conn.send({ type: 'REMATCH_REQ' });
-        checkRematchTrigger();
-    }
-
-    function checkRematchTrigger() { if(rematchRequested && oppRematchRequested) { if(amIHost && conn) { conn.send({ type: 'REMATCH_START' }); resetGameScores(); } } }
-
-    function resetGameScores() {
-        myScore = 0; oppScore = 0; rematchRequested = false; oppRematchRequested = false;
-        document.getElementById('end-screen').style.display = 'none'; updateScores();
-        document.getElementById('status-me').innerText = "Active"; document.getElementById('status-opp').innerText = "Active";
-        enableButtons(); log("🔄 Rematch initialized!");
-    }
-
-    function useStealItem() {
-        if(oppScore > 0 && myScore < 7 && oppScore < 7) {
-            document.getElementById('steal-btn').classList.add('used');
-            oppScore--; myScore++; updateScores(); if(conn) conn.send({ type: 'STEAL' });
-            checkMatchStatus();
-        }
-    }
-
-    function triggerRageQuit() {
-        if(conn) { try { conn.send({ type: 'QUIT' }); conn.close(); } catch(e){} }
-        resetToLobby();
-    }
-
+    function triggerRageQuit() { if(conn) conn.send({ type: 'QUIT' }); resetToLobby(); }
     function resetToLobby() {
-        if(syncIntervalId) clearInterval(syncIntervalId);
         conn = null; myScore = 0; oppScore = 0;
-        document.getElementById('lobby-ui').style.display = 'block';
-        document.getElementById('shop-ui').style.display = 'block';
-        document.getElementById('btn-rage-quit').style.display = 'none';
-        document.getElementById('end-screen').style.display = 'none';
-        document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
-        document.getElementById('btn-match-random').disabled = false;
-        updateScores(); disableButtons(); log("Safely returned to lobby.");
-        initPeerEngine();
+        document.getElementById('lobby-ui').style.display = 'block'; document.getElementById('btn-rage-quit').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'none'; disableButtons();
     }
-
-    function updateVaultDisplay() {
-        if(!document.getElementById('vault-coins')) return;
-        document.getElementById('vault-coins').innerText = vaultCoins;
-        localStorage.setItem('cfa_coins', vaultCoins);
-        localStorage.setItem('cfa_skins', JSON.stringify(unlockedSkins));
-        localStorage.setItem('cfa_activeskin', currentSkin);
-        document.getElementById('active-skin-lbl').innerText = currentSkin.toUpperCase();
-        coinObj.className = `coin skin-${currentSkin}`;
-    }
-
-    function watchAdReward() {
-        window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank"); 
-        vaultCoins += 15; updateVaultDisplay();
-        log("💰 Ad reward collected! +15 Coins.");
-    }
-
-    function updateScores() {
-        if(document.getElementById('score-me')) {
-            document.getElementById('score-me').innerText = myScore; 
-            document.getElementById('score-opp').innerText = oppScore;
-            document.getElementById('pool-disp').innerText = globalPool.toLocaleString();
-        }
-    }
+    function watchAdReward() { vaultCoins += 15; updateVaultDisplay(); }
     function enableButtons() { document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false; }
     function disableButtons() { document.getElementById('btn-h').disabled = true; document.getElementById('btn-t').disabled = true; }
 </script>
