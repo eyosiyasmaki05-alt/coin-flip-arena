@@ -91,6 +91,7 @@
         <button class="lobby-btn btn-quit" id="btn-return" style="display:block;" onclick="triggerRageQuit()">Return to Lobby</button>
     </div>
 
+    <!-- EXCLUSIVE TELEBIRR SECURE CHECKOUT PANEL -->
     <div class="pay-modal" id="payment-modal">
         <h2 style="color:#10b981; margin:0 0 10px 0; text-transform:uppercase;">💸 Secure Checkout</h2>
         <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">Send the exact amount via Telebirr to the account below:</p>
@@ -127,6 +128,7 @@
         <button class="lobby-btn btn-join" id="btn-join-private" onclick="connectToFriend()">Join Private Room</button>
     </div>
 
+    <!-- PREMIUM COIN STORE -->
     <div class="shop-container" id="shop-ui">
         <div style="font-size: 14px; font-weight:bold; color:#ffca28; text-transform: uppercase; letter-spacing: 0.5px;">🛒 Premium Coin & Skin Store</div>
         <div class="shop-grid">
@@ -193,6 +195,10 @@
     let myScore = 0; let oppScore = 0; let myChoice = null; let oppChoice = null;
     let amIHost = false; let streak = 0; let rematchRequested = false; let oppRematchRequested = false;
     let currentPendingItem = ""; let currentPendingPrice = "";
+    
+    // Handshake states to balance sync issues
+    let handshakeSent = false;
+    let handshakeReceived = false;
 
     const logBox = document.getElementById('log-box');
     const coinObj = document.getElementById('coin-obj');
@@ -236,7 +242,6 @@
         updateVaultDisplay();
     }
 
-    // Network setup utilizing open relay servers to bypass local firewall roadblocks
     const iceConfig = {
         'iceServers': [
             { 'urls': 'stun:stun.l.google.com:19302' },
@@ -276,7 +281,6 @@
             clearTimeout(fallbackTimer);
             conn = testConn; amIHost = false;
             vaultCoins -= 10; updateVaultDisplay(); setupNetworkTraffic();
-            log(`⚔️ Match joined successfully! Opponent connected.`);
         });
 
         fallbackTimer = setTimeout(() => {
@@ -296,7 +300,7 @@
                     conn = incomingConn; setupNetworkTraffic();
                 });
             }, 300);
-        }, 1500);
+        }, 2000);
     }
 
     function updateVaultDisplay() {
@@ -328,13 +332,32 @@
 
     function setupNetworkTraffic() {
         if(!conn) return;
+        
+        // Reset handshake flags on new channel initialization
+        handshakeSent = false;
+        handshakeReceived = false;
+
         conn.on('open', () => {
-            document.getElementById('lobby-ui').style.display = 'none';
-            document.getElementById('shop-ui').style.display = 'none';
-            document.getElementById('btn-rage-quit').style.display = 'block';
-            enableButtons(); log("⚔️ Live match connected! First to 7 Wins.");
+            log("📡 Tunnel open. Exchanging network safety handshakes...");
+            // Send ping out to verify peer return pipe is functional
+            conn.send({ type: 'HANDSHAKE_PING' });
+            handshakeSent = true;
+            checkHandshakeSuccess();
         });
+
         conn.on('data', (data) => {
+            // HANDSHAKE PROTOCOL: Prevents one-sided loading screen traps
+            if(data.type === 'HANDSHAKE_PING') {
+                conn.send({ type: 'HANDSHAKE_ACK' });
+                handshakeReceived = true;
+                checkHandshakeSuccess();
+            }
+            if(data.type === 'HANDSHAKE_ACK') {
+                handshakeReceived = true;
+                checkHandshakeSuccess();
+            }
+            
+            // RUN TIME GAMEPLAY TRAFFIC (Only fires once handshakes clear)
             if(data.type === 'CHOICE') { oppChoice = data.choice; document.getElementById('status-opp').innerText = "Locked In 🔒"; checkRoundResolution(); }
             if(data.type === 'STEAL') { myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); log("🃏 Opponent used Steal Card!"); checkMatchStatus(); }
             if(data.type === 'SYNC_FLIP') { executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); }
@@ -342,7 +365,21 @@
             if(data.type === 'REMATCH_REQ') { oppRematchRequested = true; log("🔄 Opponent wants a rematch!"); checkRematchTrigger(); }
             if(data.type === 'REMATCH_START') { resetGameScores(); }
         });
+        
         conn.on('close', () => { log("📡 Game stream disconnected."); resetToLobby(); });
+    }
+
+    function checkHandshakeSuccess() {
+        // Only trigger layout shifts if both sending and receiving tracks confirm communication
+        if(handshakeSent && handshakeReceived) {
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('shop-ui').style.display = 'none';
+            document.getElementById('btn-rage-quit').style.display = 'block';
+            document.getElementById('status-me').innerText = "Waiting...";
+            document.getElementById('status-opp').innerText = "Waiting...";
+            enableButtons(); 
+            log("⚔️ Live symmetric match connected! First to 7 Wins.");
+        }
     }
 
     function triggerRageQuit() {
@@ -352,6 +389,7 @@
 
     function resetToLobby() {
         conn = null; myScore = 0; oppScore = 0;
+        handshakeSent = false; handshakeReceived = false;
         document.getElementById('lobby-ui').style.display = 'block';
         document.getElementById('shop-ui').style.display = 'block';
         document.getElementById('btn-rage-quit').style.display = 'none';
