@@ -74,7 +74,7 @@
         .btn-ad { background: #a855f7; color: white; width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 14px; }
         .item-deck { background: #1e2633; padding: 12px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; border: 1px dashed #4b5563; font-size: 14px; }
         .item-deck.used { opacity: 0.3; cursor: not-allowed; }
-        .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 11px; height: 75px; overflow-y: auto; color: #94a3b8; }
+        .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 11px; height: 100px; overflow-y: auto; color: #10b981; border: 1px solid #1e293b; }
         
         .win-screen { display: none; background: rgba(15, 23, 42, 0.95); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
         .win-title { font-size: 32px; color: #ffca28; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; animation: pulse 1.5s infinite; }
@@ -173,7 +173,7 @@
 
     <button class="btn-quit" id="btn-rage-quit" onclick="triggerRageQuit()">🏳️ Leave Match (Forfeit)</button>
 
-    <div class="logs" id="log-box">> Welcome to the Arena Dashboard. Ready up!</div>
+    <div class="logs" id="log-box">> Systems initialized. Ready.</div>
 </div>
 
 <script>
@@ -182,7 +182,7 @@
     let currentSkin = localStorage.getItem('cfa_activeskin') || 'gold';
 
     function generateShortId() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
         let result = '';
         for (let i = 0; i < 4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
         return result;
@@ -193,8 +193,7 @@
     let myScore = 0; let oppScore = 0; let myChoice = null; let oppChoice = null;
     let amIHost = false; let streak = 0; let rematchRequested = false; let oppRematchRequested = false;
     let currentPendingItem = ""; let currentPendingPrice = "";
-    
-    let isSymmetricMatchReady = false;
+    let syncIntervalId = null;
 
     const logBox = document.getElementById('log-box');
     const coinObj = document.getElementById('coin-obj');
@@ -224,81 +223,236 @@
             alert("Please enter a valid Telebirr transaction reference ID.");
             return;
         }
-        log(`💳 INSTANT VERIFICATION: Approved for ${currentPendingItem}. Ref: ${referenceId}`);
+        log(`💳 Verification Approved. Ref: ${referenceId}`);
         triggerAdminCredit(currentPendingItem);
         closeCheckoutShop();
-        document.getElementById('pay-ref-input').value = "";
     }
 
     function triggerAdminCredit(item) {
-        if (item === "100 Coins") { vaultCoins += 100; alert("🎉 Success! 100 Coins added."); }
-        else if (item === "500 Coins") { vaultCoins += 500; alert("🎉 Success! 500 Coins added."); }
-        else if (item === "Ruby Skin") { if (!unlockedSkins.includes('ruby')) unlockedSkins.push('ruby'); currentSkin = 'ruby'; alert("🎉 Ruby Skin equipped!"); }
-        else if (item === "Cosmic Nexus") { if (!unlockedSkins.includes('cosmic')) unlockedSkins.push('cosmic'); currentSkin = 'cosmic'; alert("🎉 Cosmic Skin equipped!"); }
+        if (item === "100 Coins") vaultCoins += 100;
+        else if (item === "500 Coins") vaultCoins += 500;
+        else if (item === "Ruby Skin") { if (!unlockedSkins.includes('ruby')) unlockedSkins.push('ruby'); currentSkin = 'ruby'; }
+        else if (item === "Cosmic Nexus") { if (!unlockedSkins.includes('cosmic')) unlockedSkins.push('cosmic'); currentSkin = 'cosmic'; }
         updateVaultDisplay();
+        alert("💥 Assets successfully added to account profile!");
     }
 
-    // STRICT CLOUD FORCED RELAY CONFIGURATION
-    // Setting iceTransportPolicy to 'relay' entirely blocks direct P2P attempts.
-    // This forces all packages through the public TURN architecture so firewalls cannot isolate a player.
+    // MULTI-SERVER PUBLIC BACKUP STUN ARCHITECTURE
+    // Using explicit high-availability public servers ensures compatibility with mobile data carriers
     const iceConfig = {
-        'iceTransportPolicy': 'relay',
         'iceServers': [
-            { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-            { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+            { 'urls': 'stun:stun.l.google.com:19302' },
+            { 'urls': 'stun:stun1.l.google.com:19302' },
+            { 'urls': 'stun:stun2.l.google.com:19302' },
+            { 'urls': 'stun:stun.services.mozilla.com' }
         ]
     };
 
     function initPeerEngine() {
         try {
+            if (peer) { peer.destroy(); }
             peer = new Peer('cfa-' + shortRoomId.toLowerCase(), { debug: 1, config: iceConfig });
-            peer.on('open', () => { log("📡 Connected to game cloud network. Arena Ready."); });
-            peer.on('connection', (connection) => {
-                if (conn) { connection.close(); return; } 
-                conn = connection; amIHost = true; setupNetworkTraffic();
+            
+            peer.on('open', (id) => { 
+                log(`📡 Connected to cloud grid. ID: ${shortRoomId.toUpperCase()}`); 
             });
+            
+            peer.on('connection', (incomingConn) => {
+                // If already in a session, safely refuse duplicate traffic
+                if (conn && conn.open) { incomingConn.close(); return; }
+                log("⚡ Incoming pairing request caught! Accepting payload stream...");
+                conn = incomingConn; amIHost = true; setupNetworkTraffic();
+            });
+
             peer.on('error', (err) => {
-                if(err.type === 'unavailable-id') { setTimeout(() => { window.location.reload(); }, 1000); }
+                log(`❌ Network Engine Alert: ${err.type}`);
+                if(err.type === 'unavailable-id') { 
+                    setTimeout(() => { window.location.reload(); }, 800); 
+                }
             });
-        } catch(e) {}
+        } catch(e) { log(`System Crash Error: ${e.message}`); }
+    }
+
+    function connectToFriend() {
+        let inputId = document.getElementById('join-id-input').value.trim().toUpperCase();
+        if(inputId.length !== 4) { log("⚠️ Invalid 4-digit token code."); return; }
+        if(vaultCoins < 10) { log("⚠️ Insufficient coins vault balance."); return; }
+        
+        log(`🔗 Directly pairing to structural pipeline: ${inputId}...`);
+        
+        // Safety disconnect current active state
+        if(conn) { try { conn.close(); } catch(e){} }
+        
+        amIHost = false;
+        conn = peer.connect('cfa-' + inputId.toLowerCase(), { reliable: true });
+        setupNetworkTraffic();
     }
 
     function findRandomMatch() {
         if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
-        
         let btn = document.getElementById('btn-match-random');
-        btn.innerText = "Connecting to arena match... ⚡";
+        btn.innerText = "Connecting... ⚡";
         btn.disabled = true;
-        log("⚡ Routing connection through cloud relay towers...");
 
-        const targetLobbyChannel = 'cfa-lobby-global-hub';
-        let testConn = peer.connect(targetLobbyChannel);
-        let fallbackTimer = null;
+        const lobbyHub = 'cfa-lobby-global-hub';
+        log("🛰️ Scanning matchmaking array via cloud relay...");
 
-        testConn.on('open', () => {
-            clearTimeout(fallbackTimer);
-            conn = testConn; amIHost = false;
-            vaultCoins -= 10; updateVaultDisplay(); setupNetworkTraffic();
-        });
-
-        fallbackTimer = setTimeout(() => {
-            testConn.close();
-            log("Opening cloud room pool... 👑");
-            btn.innerText = "Hosting Match... ⏳";
+        let targetConn = peer.connect(lobbyHub, { reliable: true });
+        let timeoutTimer = setTimeout(() => {
+            targetConn.close();
+            log("Pool empty. Registering your device as Master host node... 👑");
+            btn.innerText = "Hosting Room... ⏳";
             
             if (peer) peer.destroy();
-            
             setTimeout(() => {
-                peer = new Peer(targetLobbyChannel, { debug: 1, config: iceConfig });
-                peer.on('open', () => {
-                    vaultCoins -= 10; updateVaultDisplay(); amIHost = true;
-                    log("👑 Hosted via Relay. Waiting for opponent...");
-                });
-                peer.on('connection', (incomingConn) => {
-                    conn = incomingConn; setupNetworkTraffic();
-                });
+                peer = new Peer(lobbyHub, { debug: 1, config: iceConfig });
+                peer.on('open', () => { amIHost = true; log("👑 Hosted via Relay channel. Waiting for player..."); });
+                peer.on('connection', (incoming) => { conn = incoming; setupNetworkTraffic(); });
             }, 300);
-        }, 2500);
+        }, 3000);
+
+        targetConn.on('open', () => {
+            clearTimeout(timeoutTimer);
+            conn = targetConn; amIHost = false;
+            setupNetworkTraffic();
+        });
+    }
+
+    function setupNetworkTraffic() {
+        if(!conn) return;
+
+        // Clean up any stale heartbeat intervals
+        if(syncIntervalId) clearInterval(syncIntervalId);
+
+        conn.on('open', () => {
+            log("🤝 Handshake synchronized! Unlocking match arena dashboards...");
+            vaultCoins -= 10; updateVaultDisplay();
+            
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('shop-ui').style.display = 'none';
+            document.getElementById('btn-rage-quit').style.display = 'block';
+            document.getElementById('status-me').innerText = "Active";
+            document.getElementById('status-opp').innerText = "Active";
+            enableButtons();
+
+            // Auto-heartbeat sync every second to keep connection alive
+            syncIntervalId = setInterval(() => {
+                if(conn && conn.open) conn.send({ type: 'HEARTBEAT' });
+            }, 1000);
+        });
+
+        conn.on('data', (data) => {
+            if(data.type === 'CHOICE') { 
+                oppChoice = data.choice; 
+                document.getElementById('status-opp').innerText = "Locked In 🔒"; 
+                checkRoundResolution(); 
+            }
+            if(data.type === 'SYNC_FLIP') { 
+                executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); 
+            }
+            if(data.type === 'STEAL') { 
+                myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); 
+                log("🃏 Opponent used Steal Card!"); checkMatchStatus(); 
+            }
+            if(data.type === 'QUIT') { 
+                log("🏳️ Opponent dropped connection."); resetToLobby(); 
+            }
+            if(data.type === 'REMATCH_REQ') { 
+                oppRematchRequested = true; log("🔄 Opponent wants rematch."); checkRematchTrigger(); 
+            }
+            if(data.type === 'REMATCH_START') { 
+                resetGameScores(); 
+            }
+        });
+        
+        conn.on('close', () => { log("🛑 Peer disconnected pipe connection."); resetToLobby(); });
+        conn.on('error', (e) => { log(`⚠️ Stream error: ${e.message}`); resetToLobby(); });
+    }
+
+    function makeChoice(val) {
+        myChoice = val; 
+        document.getElementById('status-me').innerText = `${val} 🔒`;
+        disableButtons(); 
+        if(conn && conn.open) conn.send({ type: 'CHOICE', choice: val }); 
+        checkRoundResolution();
+    }
+
+    function checkRoundResolution() {
+        if(myChoice && oppChoice && amIHost) {
+            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            let p1Win = (myChoice === outcome); let p2Win = (oppChoice === outcome);
+            if(p1Win) { myScore++; streak++; if(streak === 3) { myScore += 10; log("🔥 STREAK BONUS! +10"); } } else { streak = 0; }
+            if(p2Win) oppScore++; globalPool -= (p1Win ? 1 : 0) + (p2Win ? 1 : 0);
+            
+            executeVisualFlip(outcome, globalPool, myScore, oppScore);
+            if(conn && conn.open) conn.send({ type: 'SYNC_FLIP', outcome, pool: globalPool, hScore: oppScore, tScore: myScore });
+        }
+    }
+
+    function executeVisualFlip(outcome, pool, p1S, p2S) {
+        coinObj.style.animation = 'none'; coinObj.offsetHeight; 
+        coinObj.style.animation = outcome === 'Heads' ? 'spinHeads 2s forwards' : 'spinTails 2s forwards';
+        setTimeout(() => {
+            globalPool = pool; myScore = p1S; oppScore = p2S; updateScores();
+            log(`Flip Result: <b>${outcome}</b>`); myChoice = null; oppChoice = null;
+            if(!checkMatchStatus()) {
+                document.getElementById('status-me').innerText = "Active"; 
+                document.getElementById('status-opp').innerText = "Active";
+                enableButtons();
+            }
+        }, 2000);
+    }
+
+    function checkMatchStatus() {
+        if(myScore >= 7 || oppScore >= 7) {
+            disableButtons(); document.getElementById('end-screen').style.display = 'flex';
+            document.getElementById('btn-rematch').disabled = false;
+            if(myScore >= 7) { document.getElementById('win-banner').innerText = "YOU WIN!"; document.getElementById('win-banner').style.color = "#ffca28"; } 
+            else { document.getElementById('win-banner').innerText = "DEFEAT!"; document.getElementById('win-banner').style.color = "#ef4444"; }
+            return true;
+        }
+        return false;
+    }
+
+    function requestRematch() {
+        rematchRequested = true; document.getElementById('btn-rematch').innerText = "Waiting... 🔄";
+        document.getElementById('btn-rematch').disabled = true; if(conn) conn.send({ type: 'REMATCH_REQ' });
+        checkRematchTrigger();
+    }
+
+    function checkRematchTrigger() { if(rematchRequested && oppRematchRequested) { if(amIHost && conn) { conn.send({ type: 'REMATCH_START' }); resetGameScores(); } } }
+
+    function resetGameScores() {
+        myScore = 0; oppScore = 0; rematchRequested = false; oppRematchRequested = false;
+        document.getElementById('end-screen').style.display = 'none'; updateScores();
+        document.getElementById('status-me').innerText = "Active"; document.getElementById('status-opp').innerText = "Active";
+        enableButtons(); log("🔄 Rematch initialized!");
+    }
+
+    function useStealItem() {
+        if(oppScore > 0 && myScore < 7 && oppScore < 7) {
+            document.getElementById('steal-btn').classList.add('used');
+            oppScore--; myScore++; updateScores(); if(conn) conn.send({ type: 'STEAL' });
+            checkMatchStatus();
+        }
+    }
+
+    function triggerRageQuit() {
+        if(conn) { try { conn.send({ type: 'QUIT' }); conn.close(); } catch(e){} }
+        resetToLobby();
+    }
+
+    function resetToLobby() {
+        if(syncIntervalId) clearInterval(syncIntervalId);
+        conn = null; myScore = 0; oppScore = 0;
+        document.getElementById('lobby-ui').style.display = 'block';
+        document.getElementById('shop-ui').style.display = 'block';
+        document.getElementById('btn-rage-quit').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'none';
+        document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
+        document.getElementById('btn-match-random').disabled = false;
+        updateScores(); disableButtons(); log("Safely returned to lobby.");
+        initPeerEngine();
     }
 
     function updateVaultDisplay() {
@@ -312,151 +466,9 @@
     }
 
     function watchAdReward() {
-        log("🎬 Opening monetization link stream...");
         window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank"); 
         vaultCoins += 15; updateVaultDisplay();
-        log("💰 Ad complete. +15 Coins collected safely!");
-    }
-
-    function connectToFriend() {
-        let inputId = document.getElementById('join-id-input').value.trim().toLowerCase();
-        if(inputId.length !== 4) { log("⚠️ Enter a valid 4-digit room code."); return; }
-        if(vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
-        if(!peer || peer.destroyed) { initPeerEngine(); return; }
-        vaultCoins -= 10; updateVaultDisplay();
-        log(`Connecting to Friend Room: ${inputId.toUpperCase()}...`);
-        conn = peer.connect('cfa-' + inputId); amIHost = false; setupNetworkTraffic();
-    }
-
-    function setupNetworkTraffic() {
-        if(!conn) return;
-        isSymmetricMatchReady = false;
-
-        conn.on('open', () => {
-            // Heartbeat system starts firing to lock panels synchronously
-            setInterval(() => {
-                if(conn && conn.open && !isSymmetricMatchReady) {
-                    conn.send({ type: 'FORCE_SYNC_PING' });
-                }
-            }, 500);
-        });
-
-        conn.on('data', (data) => {
-            if(data.type === 'FORCE_SYNC_PING') {
-                conn.send({ type: 'FORCE_SYNC_ACK' });
-                activateGameView();
-            }
-            if(data.type === 'FORCE_SYNC_ACK') {
-                activateGameView();
-            }
-            
-            // Block choices unless both are in sync loop
-            if(!isSymmetricMatchReady) return;
-
-            if(data.type === 'CHOICE') { oppChoice = data.choice; document.getElementById('status-opp').innerText = "Locked In 🔒"; checkRoundResolution(); }
-            if(data.type === 'STEAL') { myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); log("🃏 Opponent used Steal Card!"); checkMatchStatus(); }
-            if(data.type === 'SYNC_FLIP') { executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); }
-            if(data.type === 'QUIT') { log("🏳️ Opponent left the match. Returning to lobby."); setTimeout(() => { resetToLobby(); }, 2000); }
-            if(data.type === 'REMATCH_REQ') { oppRematchRequested = true; log("🔄 Opponent wants a rematch!"); checkRematchTrigger(); }
-            if(data.type === 'REMATCH_START') { resetGameScores(); }
-        });
-        
-        conn.on('close', () => { log("📡 Game stream disconnected."); resetToLobby(); });
-    }
-
-    function activateGameView() {
-        if(isSymmetricMatchReady) return;
-        isSymmetricMatchReady = true;
-        
-        document.getElementById('lobby-ui').style.display = 'none';
-        document.getElementById('shop-ui').style.display = 'none';
-        document.getElementById('btn-rage-quit').style.display = 'block';
-        document.getElementById('status-me').innerText = "Waiting...";
-        document.getElementById('status-opp').innerText = "Waiting...";
-        enableButtons(); 
-        log("⚔️ Cloud-Relayed Live Match connected! First to 7 Wins.");
-    }
-
-    function triggerRageQuit() {
-        if(conn) { conn.send({ type: 'QUIT' }); setTimeout(() => { try { conn.close(); } catch(e){} }, 200); }
-        resetToLobby();
-    }
-
-    function resetToLobby() {
-        conn = null; myScore = 0; oppScore = 0; isSymmetricMatchReady = false;
-        document.getElementById('lobby-ui').style.display = 'block';
-        document.getElementById('shop-ui').style.display = 'block';
-        document.getElementById('btn-rage-quit').style.display = 'none';
-        document.getElementById('end-screen').style.display = 'none';
-        document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
-        document.getElementById('btn-match-random').disabled = false;
-        updateScores(); disableButtons(); log("Returned safely to Arena Lobby.");
-        initPeerEngine();
-    }
-
-    function makeChoice(val) {
-        if(!isSymmetricMatchReady) return;
-        myChoice = val; document.getElementById('status-me').innerText = `Selected: ${val} 🔒`;
-        disableButtons(); if(conn) conn.send({ type: 'CHOICE', choice: val }); checkRoundResolution();
-    }
-
-    function checkRoundResolution() {
-        if(myChoice && oppChoice && amIHost) {
-            const outcome = Math.random() < 0.5 ? 'Heads' : 'Tails';
-            let p1Win = (myChoice === outcome); let p2Win = (oppChoice === outcome);
-            if(p1Win) { myScore++; streak++; if(streak === 3) { myScore += 10; log("🔥 STREAK BONUS! +10"); } } else { streak = 0; }
-            if(p2Win) oppScore++; globalPool -= (p1Win ? 1 : 0) + (p2Win ? 1 : 0);
-            executeVisualFlip(outcome, globalPool, myScore, oppScore);
-            if(conn) conn.send({ type: 'SYNC_FLIP', outcome, pool: globalPool, hScore: oppScore, tScore: myScore });
-        }
-    }
-
-    function executeVisualFlip(outcome, pool, p1S, p2S) {
-        coinObj.style.animation = 'none'; coinObj.offsetHeight; 
-        coinObj.style.animation = outcome === 'Heads' ? 'spinHeads 2s forwards' : 'spinTails 2s forwards';
-        setTimeout(() => {
-            globalPool = pool; myScore = p1S; oppScore = p2S; updateScores();
-            log(`Flip Result: <b>${outcome}</b>`); myChoice = null; oppChoice = null;
-            if(!checkMatchStatus()) {
-                document.getElementById('status-me').innerText = "Waiting..."; document.getElementById('status-opp').innerText = "Waiting...";
-                enableButtons();
-            }
-        }, 2000);
-    }
-
-    function checkMatchStatus() {
-        if(myScore >= 7 || oppScore >= 7) {
-            disableButtons(); document.getElementById('end-screen').style.display = 'flex';
-            document.getElementById('btn-rematch').disabled = false; document.getElementById('btn-rematch').innerText = "Request Rematch";
-            rematchRequested = false; oppRematchRequested = false;
-            if(myScore >= 7) { document.getElementById('win-banner').innerText = "YOU WIN!"; document.getElementById('win-banner').style.color = "#ffca28"; } 
-            else { document.getElementById('win-banner').innerText = "DEFEAT!"; document.getElementById('win-banner').style.color = "#ef4444"; }
-            return true;
-        }
-        return false;
-    }
-
-    function requestRematch() {
-        rematchRequested = true; document.getElementById('btn-rematch').innerText = "Waiting for Opponent... 🔄";
-        document.getElementById('btn-rematch').disabled = true; if(conn) conn.send({ type: 'REMATCH_REQ' });
-        checkRematchTrigger();
-    }
-
-    function checkRematchTrigger() { if(rematchRequested && oppRematchRequested) { if(amIHost && conn) { conn.send({ type: 'REMATCH_START' }); resetGameScores(); } } }
-
-    function resetGameScores() {
-        myScore = 0; oppScore = 0; rematchRequested = false; oppRematchRequested = false;
-        document.getElementById('end-screen').style.display = 'none'; updateScores();
-        document.getElementById('status-me').innerText = "Waiting..."; document.getElementById('status-opp').innerText = "Waiting...";
-        enableButtons(); log("🔄 Rematch initialized!");
-    }
-
-    function useStealItem() {
-        if(oppScore > 0 && myScore < 7 && oppScore < 7) {
-            document.getElementById('steal-btn').classList.add('used');
-            oppScore--; myScore++; updateScores(); if(conn) conn.send({ type: 'STEAL' });
-            checkMatchStatus();
-        }
+        log("💰 Ad reward collected! +15 Coins.");
     }
 
     function updateScores() {
