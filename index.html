@@ -91,7 +91,6 @@
         <button class="lobby-btn btn-quit" id="btn-return" style="display:block;" onclick="triggerRageQuit()">Return to Lobby</button>
     </div>
 
-    <!-- EXCLUSIVE TELEBIRR SECURE CHECKOUT PANEL -->
     <div class="pay-modal" id="payment-modal">
         <h2 style="color:#10b981; margin:0 0 10px 0; text-transform:uppercase;">💸 Secure Checkout</h2>
         <p style="font-size:13px; color:#cbd5e1; margin-bottom:15px;">Send the exact amount via Telebirr to the account below:</p>
@@ -128,7 +127,6 @@
         <button class="lobby-btn btn-join" id="btn-join-private" onclick="connectToFriend()">Join Private Room</button>
     </div>
 
-    <!-- PREMIUM COIN STORE -->
     <div class="shop-container" id="shop-ui">
         <div style="font-size: 14px; font-weight:bold; color:#ffca28; text-transform: uppercase; letter-spacing: 0.5px;">🛒 Premium Coin & Skin Store</div>
         <div class="shop-grid">
@@ -196,9 +194,7 @@
     let amIHost = false; let streak = 0; let rematchRequested = false; let oppRematchRequested = false;
     let currentPendingItem = ""; let currentPendingPrice = "";
     
-    // Handshake states to balance sync issues
-    let handshakeSent = false;
-    let handshakeReceived = false;
+    let isSymmetricMatchReady = false;
 
     const logBox = document.getElementById('log-box');
     const coinObj = document.getElementById('coin-obj');
@@ -242,10 +238,12 @@
         updateVaultDisplay();
     }
 
+    // STRICT CLOUD FORCED RELAY CONFIGURATION
+    // Setting iceTransportPolicy to 'relay' entirely blocks direct P2P attempts.
+    // This forces all packages through the public TURN architecture so firewalls cannot isolate a player.
     const iceConfig = {
+        'iceTransportPolicy': 'relay',
         'iceServers': [
-            { 'urls': 'stun:stun.l.google.com:19302' },
-            { 'urls': 'stun:stun1.l.google.com:19302' },
             { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
             { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
         ]
@@ -271,7 +269,7 @@
         let btn = document.getElementById('btn-match-random');
         btn.innerText = "Connecting to arena match... ⚡";
         btn.disabled = true;
-        log("⚡ Piercing connection tunnel through network firewalls...");
+        log("⚡ Routing connection through cloud relay towers...");
 
         const targetLobbyChannel = 'cfa-lobby-global-hub';
         let testConn = peer.connect(targetLobbyChannel);
@@ -285,7 +283,7 @@
 
         fallbackTimer = setTimeout(() => {
             testConn.close();
-            log("No open host room found. Opening your lobby as the master hub... 👑");
+            log("Opening cloud room pool... 👑");
             btn.innerText = "Hosting Match... ⏳";
             
             if (peer) peer.destroy();
@@ -294,13 +292,13 @@
                 peer = new Peer(targetLobbyChannel, { debug: 1, config: iceConfig });
                 peer.on('open', () => {
                     vaultCoins -= 10; updateVaultDisplay(); amIHost = true;
-                    log("👑 Master hub live via Relay. Awaiting challenger entry...");
+                    log("👑 Hosted via Relay. Waiting for opponent...");
                 });
                 peer.on('connection', (incomingConn) => {
                     conn = incomingConn; setupNetworkTraffic();
                 });
             }, 300);
-        }, 2000);
+        }, 2500);
     }
 
     function updateVaultDisplay() {
@@ -332,32 +330,29 @@
 
     function setupNetworkTraffic() {
         if(!conn) return;
-        
-        // Reset handshake flags on new channel initialization
-        handshakeSent = false;
-        handshakeReceived = false;
+        isSymmetricMatchReady = false;
 
         conn.on('open', () => {
-            log("📡 Tunnel open. Exchanging network safety handshakes...");
-            // Send ping out to verify peer return pipe is functional
-            conn.send({ type: 'HANDSHAKE_PING' });
-            handshakeSent = true;
-            checkHandshakeSuccess();
+            // Heartbeat system starts firing to lock panels synchronously
+            setInterval(() => {
+                if(conn && conn.open && !isSymmetricMatchReady) {
+                    conn.send({ type: 'FORCE_SYNC_PING' });
+                }
+            }, 500);
         });
 
         conn.on('data', (data) => {
-            // HANDSHAKE PROTOCOL: Prevents one-sided loading screen traps
-            if(data.type === 'HANDSHAKE_PING') {
-                conn.send({ type: 'HANDSHAKE_ACK' });
-                handshakeReceived = true;
-                checkHandshakeSuccess();
+            if(data.type === 'FORCE_SYNC_PING') {
+                conn.send({ type: 'FORCE_SYNC_ACK' });
+                activateGameView();
             }
-            if(data.type === 'HANDSHAKE_ACK') {
-                handshakeReceived = true;
-                checkHandshakeSuccess();
+            if(data.type === 'FORCE_SYNC_ACK') {
+                activateGameView();
             }
             
-            // RUN TIME GAMEPLAY TRAFFIC (Only fires once handshakes clear)
+            // Block choices unless both are in sync loop
+            if(!isSymmetricMatchReady) return;
+
             if(data.type === 'CHOICE') { oppChoice = data.choice; document.getElementById('status-opp').innerText = "Locked In 🔒"; checkRoundResolution(); }
             if(data.type === 'STEAL') { myScore = Math.max(0, myScore - 1); oppScore++; updateScores(); log("🃏 Opponent used Steal Card!"); checkMatchStatus(); }
             if(data.type === 'SYNC_FLIP') { executeVisualFlip(data.outcome, data.pool, data.hScore, data.tScore); }
@@ -369,17 +364,17 @@
         conn.on('close', () => { log("📡 Game stream disconnected."); resetToLobby(); });
     }
 
-    function checkHandshakeSuccess() {
-        // Only trigger layout shifts if both sending and receiving tracks confirm communication
-        if(handshakeSent && handshakeReceived) {
-            document.getElementById('lobby-ui').style.display = 'none';
-            document.getElementById('shop-ui').style.display = 'none';
-            document.getElementById('btn-rage-quit').style.display = 'block';
-            document.getElementById('status-me').innerText = "Waiting...";
-            document.getElementById('status-opp').innerText = "Waiting...";
-            enableButtons(); 
-            log("⚔️ Live symmetric match connected! First to 7 Wins.");
-        }
+    function activateGameView() {
+        if(isSymmetricMatchReady) return;
+        isSymmetricMatchReady = true;
+        
+        document.getElementById('lobby-ui').style.display = 'none';
+        document.getElementById('shop-ui').style.display = 'none';
+        document.getElementById('btn-rage-quit').style.display = 'block';
+        document.getElementById('status-me').innerText = "Waiting...";
+        document.getElementById('status-opp').innerText = "Waiting...";
+        enableButtons(); 
+        log("⚔️ Cloud-Relayed Live Match connected! First to 7 Wins.");
     }
 
     function triggerRageQuit() {
@@ -388,8 +383,7 @@
     }
 
     function resetToLobby() {
-        conn = null; myScore = 0; oppScore = 0;
-        handshakeSent = false; handshakeReceived = false;
+        conn = null; myScore = 0; oppScore = 0; isSymmetricMatchReady = false;
         document.getElementById('lobby-ui').style.display = 'block';
         document.getElementById('shop-ui').style.display = 'block';
         document.getElementById('btn-rage-quit').style.display = 'none';
@@ -401,6 +395,7 @@
     }
 
     function makeChoice(val) {
+        if(!isSymmetricMatchReady) return;
         myChoice = val; document.getElementById('status-me').innerText = `Selected: ${val} 🔒`;
         disableButtons(); if(conn) conn.send({ type: 'CHOICE', choice: val }); checkRoundResolution();
     }
