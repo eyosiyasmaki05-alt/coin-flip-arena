@@ -228,7 +228,6 @@
             alert("Please enter a valid Telebirr or CBE transaction reference ID.");
             return;
         }
-        
         log(`💳 INSTANT VERIFICATION: Approved for ${currentPendingItem}. Ref: ${referenceId}`);
         triggerAdminCredit(currentPendingItem);
         closeCheckoutShop();
@@ -236,34 +235,34 @@
     }
 
     function triggerAdminCredit(item) {
-        if (item === "100 Coins") { 
-            vaultCoins += 100; 
-            alert("🎉 Success! 100 Coins have been added to your vault instantly.");
-        }
-        else if (item === "500 Coins") { 
-            vaultCoins += 500; 
-            alert("🎉 Success! 500 Coins have been added to your vault instantly.");
-        }
-        else if (item === "Ruby Skin") { 
-            if (!unlockedSkins.includes('ruby')) unlockedSkins.push('ruby');
-            currentSkin = 'ruby'; 
-            alert("🎉 Success! Ruby Skin unlocked and equipped instantly.");
-        }
-        else if (item === "Cosmic Nexus") { 
-            if (!unlockedSkins.includes('cosmic')) unlockedSkins.push('cosmic');
-            currentSkin = 'cosmic'; 
-            alert("🎉 Success! Cosmic Nexus Skin unlocked and equipped instantly.");
-        }
+        if (item === "100 Coins") { vaultCoins += 100; alert("🎉 Success! 100 Coins added."); }
+        else if (item === "500 Coins") { vaultCoins += 500; alert("🎉 Success! 500 Coins added."); }
+        else if (item === "Ruby Skin") { if (!unlockedSkins.includes('ruby')) unlockedSkins.push('ruby'); currentSkin = 'ruby'; alert("🎉 Ruby Skin equipped!"); }
+        else if (item === "Cosmic Nexus") { if (!unlockedSkins.includes('cosmic')) unlockedSkins.push('cosmic'); currentSkin = 'cosmic'; alert("🎉 Cosmic Skin equipped!"); }
         updateVaultDisplay();
     }
 
+    // ICE SERVERS: Injected Metered global TURN relay servers to bypass strict router/mobile data firewalls
+    const iceConfig = {
+        'iceServers': [
+            { 'urls': 'stun:stun.l.google.com:19302' },
+            { 'urls': 'stun:stun1.l.google.com:19302' },
+            {
+                'urls': 'turn:openrelay.metered.ca:443',
+                'username': 'openrelayproject',
+                'credential': 'openrelayproject'
+            },
+            {
+                'urls': 'turn:openrelay.metered.ca:80',
+                'username': 'openrelayproject',
+                'credential': 'openrelayproject'
+            }
+        ]
+    };
+
     function initPeerEngine() {
         try {
-            // Using modern WebRTC direct broker parameters to establish stable cloud handshakes
-            peer = new Peer('cfa-' + shortRoomId.toLowerCase(), {
-                debug: 1,
-                config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }] }
-            });
+            peer = new Peer('cfa-' + shortRoomId.toLowerCase(), { debug: 1, config: iceConfig });
             peer.on('open', () => { log("📡 Connected to game cloud network. Arena Ready."); });
             peer.on('connection', (connection) => {
                 if (conn) { connection.close(); return; } 
@@ -275,19 +274,16 @@
         } catch(e) {}
     }
 
-    /* DIRECT ORCHESTRATION MATCHMAKING ENGINE */
+    /* MASTER CHANNELS WITH RELAY FALLBACKS */
     function findRandomMatch() {
         if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
         
         let btn = document.getElementById('btn-match-random');
         btn.innerText = "Connecting to arena match... ⚡";
         btn.disabled = true;
-        log("⚡ Piercing connection tunnel to active players...");
+        log("⚡ Piercing connection tunnel through network firewalls...");
 
-        // Dedicated matchmaking pool host channel link
-        const targetLobbyChannel = 'cfa-public-matchmaking-hub';
-        
-        // Try connecting directly to an existing host room
+        const targetLobbyChannel = 'cfa-lobby-global-hub';
         let testConn = peer.connect(targetLobbyChannel);
         let fallbackTimer = null;
 
@@ -298,29 +294,24 @@
             log(`⚔️ Match joined successfully! Opponent connected.`);
         });
 
-        // Safe fallback mechanism if no one is hosting the global hub channel yet
         fallbackTimer = setTimeout(() => {
             testConn.close();
             log("No open host room found. Opening your lobby as the master hub... 👑");
             btn.innerText = "Hosting Match... ⏳";
             
-            // Re-initialize this peer instance as the global accessible lane
             if (peer) peer.destroy();
             
             setTimeout(() => {
-                peer = new Peer(targetLobbyChannel, {
-                    debug: 1,
-                    config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] }
-                });
+                peer = new Peer(targetLobbyChannel, { debug: 1, config: iceConfig });
                 peer.on('open', () => {
                     vaultCoins -= 10; updateVaultDisplay(); amIHost = true;
-                    log("👑 Master hub live. Awaiting matching challenger entry...");
+                    log("👑 Master hub live via Relay. Awaiting challenger entry...");
                 });
                 peer.on('connection', (incomingConn) => {
                     conn = incomingConn; setupNetworkTraffic();
                 });
             }, 300);
-        }, 1200);
+        }, 1500);
     }
 
     function updateVaultDisplay() {
@@ -338,11 +329,6 @@
         window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank"); 
         vaultCoins += 15; updateVaultDisplay();
         log("💰 Ad complete. +15 Coins collected safely!");
-    }
-
-    function equipSkin(skin) {
-        if(!unlockedSkins.includes(skin)) return;
-        currentSkin = skin; updateVaultDisplay(); log(`Equipped ${skin.toUpperCase()} cosmetics.`);
     }
 
     function connectToFriend() {
@@ -388,8 +374,6 @@
         document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
         document.getElementById('btn-match-random').disabled = false;
         updateScores(); disableButtons(); log("Returned safely to Arena Lobby.");
-        
-        // Re-establish local connection strings back to baseline room configuration
         initPeerEngine();
     }
 
