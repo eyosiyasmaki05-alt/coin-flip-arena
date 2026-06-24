@@ -259,9 +259,10 @@
 
     function initPeerEngine() {
         try {
+            // Using modern WebRTC direct broker parameters to establish stable cloud handshakes
             peer = new Peer('cfa-' + shortRoomId.toLowerCase(), {
                 debug: 1,
-                config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] }
+                config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }] }
             });
             peer.on('open', () => { log("📡 Connected to game cloud network. Arena Ready."); });
             peer.on('connection', (connection) => {
@@ -274,51 +275,52 @@
         } catch(e) {}
     }
 
-    /* HIGH-SPEED PUBLIC MATCHMAKING ENGINE */
+    /* DIRECT ORCHESTRATION MATCHMAKING ENGINE */
     function findRandomMatch() {
         if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
         
         let btn = document.getElementById('btn-match-random');
-        btn.innerText = "Searching for opponents... ⚡";
+        btn.innerText = "Connecting to arena match... ⚡";
         btn.disabled = true;
-        log("⚡ Scanning Arena network for open waiting lobbies...");
+        log("⚡ Piercing connection tunnel to active players...");
 
-        // Preset public channel designation array tags
-        const commonLobbies = ['aaaa', 'bbbb', 'cccc', 'dddd', '1111', '2222', 'play'];
-        let foundMatch = false; let checkCount = 0;
+        // Dedicated matchmaking pool host channel link
+        const targetLobbyChannel = 'cfa-public-matchmaking-hub';
+        
+        // Try connecting directly to an existing host room
+        let testConn = peer.connect(targetLobbyChannel);
+        let fallbackTimer = null;
 
-        commonLobbies.forEach((lobbyId) => {
-            if (foundMatch) return;
-            let testConn = peer.connect('cfa-' + lobbyId);
+        testConn.on('open', () => {
+            clearTimeout(fallbackTimer);
+            conn = testConn; amIHost = false;
+            vaultCoins -= 10; updateVaultDisplay(); setupNetworkTraffic();
+            log(`⚔️ Match joined successfully! Opponent connected.`);
+        });
+
+        // Safe fallback mechanism if no one is hosting the global hub channel yet
+        fallbackTimer = setTimeout(() => {
+            testConn.close();
+            log("No open host room found. Opening your lobby as the master hub... 👑");
+            btn.innerText = "Hosting Match... ⏳";
             
-            testConn.on('open', () => {
-                if (!foundMatch) {
-                    foundMatch = true; conn = testConn; amIHost = false;
-                    vaultCoins -= 10; updateVaultDisplay(); setupNetworkTraffic();
-                    log(`⚔️ Match found! Connected to Lobby: ${lobbyId.toUpperCase()}`);
-                }
-            });
-
-            testConn.on('error', () => {
-                checkCount++; checkLobbyFailure(checkCount, commonLobbies.length, btn);
-            });
+            // Re-initialize this peer instance as the global accessible lane
+            if (peer) peer.destroy();
             
             setTimeout(() => {
-                if (!foundMatch && !conn) {
-                    testConn.close(); checkCount++;
-                    checkLobbyFailure(checkCount, commonLobbies.length, btn);
-                }
-            }, 800); // 800ms fast-timeout cycle
-        });
-    }
-
-    function checkLobbyFailure(count, total, btn) {
-        if (count >= total && !conn) {
-            log("No open rooms found. Instantly hosting public matchmaking hub... 👑");
-            btn.innerText = "Hosting Public Match... ⏳";
-            vaultCoins -= 10; updateVaultDisplay();
-            amIHost = true;
-        }
+                peer = new Peer(targetLobbyChannel, {
+                    debug: 1,
+                    config: { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] }
+                });
+                peer.on('open', () => {
+                    vaultCoins -= 10; updateVaultDisplay(); amIHost = true;
+                    log("👑 Master hub live. Awaiting matching challenger entry...");
+                });
+                peer.on('connection', (incomingConn) => {
+                    conn = incomingConn; setupNetworkTraffic();
+                });
+            }, 300);
+        }, 1200);
     }
 
     function updateVaultDisplay() {
@@ -386,6 +388,9 @@
         document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
         document.getElementById('btn-match-random').disabled = false;
         updateScores(); disableButtons(); log("Returned safely to Arena Lobby.");
+        
+        // Re-establish local connection strings back to baseline room configuration
+        initPeerEngine();
     }
 
     function makeChoice(val) {
