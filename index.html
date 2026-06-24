@@ -211,7 +211,6 @@
         initPeerEngine();
     };
 
-    /* AUTOMATED IN-GAME RECEIPT CREDIT PIPELINE */
     function openCheckoutShop(itemName, price) {
         currentPendingItem = itemName;
         currentPendingPrice = price;
@@ -230,7 +229,7 @@
             return;
         }
         
-        log(`💳 INSTANT PROCESSING: Verified for ${currentPendingItem}. Ref: ${referenceId}`);
+        log(`💳 INSTANT VERIFICATION: Approved for ${currentPendingItem}. Ref: ${referenceId}`);
         triggerAdminCredit(currentPendingItem);
         closeCheckoutShop();
         document.getElementById('pay-ref-input').value = "";
@@ -275,6 +274,53 @@
         } catch(e) {}
     }
 
+    /* HIGH-SPEED PUBLIC MATCHMAKING ENGINE */
+    function findRandomMatch() {
+        if (vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
+        
+        let btn = document.getElementById('btn-match-random');
+        btn.innerText = "Searching for opponents... ⚡";
+        btn.disabled = true;
+        log("⚡ Scanning Arena network for open waiting lobbies...");
+
+        // Preset public channel designation array tags
+        const commonLobbies = ['aaaa', 'bbbb', 'cccc', 'dddd', '1111', '2222', 'play'];
+        let foundMatch = false; let checkCount = 0;
+
+        commonLobbies.forEach((lobbyId) => {
+            if (foundMatch) return;
+            let testConn = peer.connect('cfa-' + lobbyId);
+            
+            testConn.on('open', () => {
+                if (!foundMatch) {
+                    foundMatch = true; conn = testConn; amIHost = false;
+                    vaultCoins -= 10; updateVaultDisplay(); setupNetworkTraffic();
+                    log(`⚔️ Match found! Connected to Lobby: ${lobbyId.toUpperCase()}`);
+                }
+            });
+
+            testConn.on('error', () => {
+                checkCount++; checkLobbyFailure(checkCount, commonLobbies.length, btn);
+            });
+            
+            setTimeout(() => {
+                if (!foundMatch && !conn) {
+                    testConn.close(); checkCount++;
+                    checkLobbyFailure(checkCount, commonLobbies.length, btn);
+                }
+            }, 800); // 800ms fast-timeout cycle
+        });
+    }
+
+    function checkLobbyFailure(count, total, btn) {
+        if (count >= total && !conn) {
+            log("No open rooms found. Instantly hosting public matchmaking hub... 👑");
+            btn.innerText = "Hosting Public Match... ⏳";
+            vaultCoins -= 10; updateVaultDisplay();
+            amIHost = true;
+        }
+    }
+
     function updateVaultDisplay() {
         if(!document.getElementById('vault-coins')) return;
         document.getElementById('vault-coins').innerText = vaultCoins;
@@ -305,17 +351,6 @@
         vaultCoins -= 10; updateVaultDisplay();
         log(`Connecting to Friend Room: ${inputId.toUpperCase()}...`);
         conn = peer.connect('cfa-' + inputId); amIHost = false; setupNetworkTraffic();
-    }
-
-    function findRandomMatch() {
-        if(vaultCoins < 10) { log("⚠️ Entry fee requires 10 coins."); return; }
-        document.getElementById('btn-match-random').innerText = "Broadcasting Lobby Request... 📡";
-        setTimeout(() => {
-            if(conn) return;
-            log("No open waiting rooms found. Hosting open public lobby... ⏳");
-            document.getElementById('btn-match-random').innerText = "Waiting for Challenger... ⏳";
-            vaultCoins -= 10; updateVaultDisplay();
-        }, 3000);
     }
 
     function setupNetworkTraffic() {
@@ -349,6 +384,7 @@
         document.getElementById('btn-rage-quit').style.display = 'none';
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('btn-match-random').innerText = "⚡ Auto-Join Live Match (Entry: 10 Coins)";
+        document.getElementById('btn-match-random').disabled = false;
         updateScores(); disableButtons(); log("Returned safely to Arena Lobby.");
     }
 
