@@ -259,7 +259,6 @@
     window.addEventListener('DOMContentLoaded', () => { checkActiveSession(); initGlobalMatchmaker(); updatePoolDisplay(); });
     function log(m) { const b = document.getElementById('log-box'); if(b) b.innerHTML = `> ${m}<br>${b.innerHTML}`; }
 
-    // Automated Pool Liquidity Watcher
     function updatePoolDisplay() {
         if (systemPoolValue <= 50000) {
             systemPoolValue = 1000000;
@@ -332,10 +331,6 @@
                     options: { data: { phone_number: phone } }
                 });
                 if(error) throw error;
-                
-                if (data && !data.session && data.user) {
-                    alert("Verification check! Moving to game layout. Please make sure email checks are configured inside your provider tab.");
-                }
                 window.location.reload();
             } else {
                 const { error } = await db.auth.signInWithPassword({ email, password });
@@ -392,7 +387,7 @@
     }
 
     function findRandomMatch() {
-        if (vaultCoins < 10) { alert("Vault matches require a minimum of 10 coins."); return; }
+        if (vaultCoins < 20) { alert("Matches require a minimum stake of 20 coins."); return; }
         log("Searching for live match channels...");
         let lobbyFound = false;
 
@@ -422,7 +417,7 @@
     
     function connectToFriend() {
         let id = document.getElementById('join-id-input').value.trim().toUpperCase();
-        if(id.length !== 4 || vaultCoins < 10) return;
+        if(id.length !== 4 || vaultCoins < 20) { alert("Valid code and 20 coins required."); return; }
         amIHost = false; conn = peer.connect('cfa-' + id.toLowerCase()); setupNetworkTraffic();
     }
 
@@ -434,11 +429,12 @@
             updatePoolDisplay();
             document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
             document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
-            log("Match started! Choose your alignment side.");
+            log("Match started! Standard 10 coin fee deducted. 20 coin winner stake active.");
         });
         conn.on('data', (d) => {
             if(d.type === 'CHOICE') { oppChoice = d.choice; checkRoundResolution(); }
             if(d.type === 'SYNC_FLIP') executeVisualFlip(d.outcome, d.hScore, d.tScore);
+            if(d.type === 'STAKE_RESOLUTION') handleStakePayout(d.won);
             if(d.type === 'QUIT') resetToLobby();
         });
         conn.on('close', () => { resetToLobby(); });
@@ -470,20 +466,49 @@
             myScore = p1; oppScore = p2;
             document.getElementById('score-me').innerText = myScore; document.getElementById('score-opp').innerText = oppScore;
             myChoice = null; oppChoice = null;
+            
             if(myScore >= 7 || oppScore >= 7) {
                 document.getElementById('end-screen').style.display = 'flex';
                 let matchesWon = myScore >= 7;
                 document.getElementById('win-banner').innerText = matchesWon ? "VICTORY!" : "DEFEAT";
-                if(matchesWon) {
-                    vaultCoins += 20; 
-                    systemPoolValue += 20;
-                    updateVaultDisplay();
-                    updatePoolDisplay();
+                
+                // Host pushes final tracking signals down the P2P pipe
+                if(amIHost) {
+                    handleStakePayout(matchesWon);
+                    if(conn) conn.send({ type: 'STAKE_RESOLUTION', won: !matchesWon });
                 }
             } else {
                 document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
             }
         }, 1800);
+    }
+
+    // LIVE STAKING & BANKRUPTCY EVALUATION MECHANISM
+    function handleStakePayout(hasWon) {
+        if(hasWon) {
+            vaultCoins += 20; // Earn 20 coins directly from the opponent
+            systemPoolValue += 20;
+            log("🏆 Victory! Claimed +20 coins from your opponent's balance.");
+            updateVaultDisplay();
+            updatePoolDisplay();
+        } else {
+            vaultCoins -= 20; // Lose 20 coins to the winner
+            systemPoolValue -= 20;
+            log("💀 Defeat! Deducted -20 coins from your vault balance.");
+            
+            // Check if player goes bankrupt
+            if (vaultCoins < 0) {
+                log("🚨 Insufficient coins detected! Launching Auto-Ad recovery backup...");
+                // Launch monetization link inside a new window frame node
+                window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank");
+                
+                // Refill vault balance back up to safety limits (+50 coins backup)
+                vaultCoins = 50;
+                alert("Out of Coins! An ad has been opened to reload your wallet. Provisons updated (+50 🪙 recovery coins loaded).");
+            }
+            updateVaultDisplay();
+            updatePoolDisplay();
+        }
     }
 
     function triggerRageQuit() { if(conn) conn.send({ type: 'QUIT' }); resetToLobby(); }
@@ -494,11 +519,8 @@
         document.getElementById('score-me').innerText = 0; document.getElementById('score-opp').innerText = 0;
     }
     
-    // UPDATED ACTIVE MONETIZATION MODULE
     function watchAdReward() { 
-        // Open the Adsterra tracking link target inside a secure background matrix node channel
         window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank");
-        
         vaultCoins += 15; 
         systemPoolValue -= 15; 
         updateVaultDisplay(); 
