@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coin Flip Arena - Master Production Build</title>
-    <!-- Core Platform Engines -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -80,7 +79,6 @@
 
 <div class="wrapper">
     
-    <!-- AUTHENTICATION FORM LAYER -->
     <div class="auth-overlay" id="auth-screen">
         <h2 id="auth-title" style="color:#ffca28; margin:0 0 4px; font-size:18px; text-transform:uppercase;">Arena Profile Identity</h2>
         <p id="auth-desc" style="font-size:11px; color:#a1a1aa; margin:0 0 15px;">Secure database account profile validation</p>
@@ -94,49 +92,70 @@
         <button class="auth-toggle" id="auth-toggle-btn" style="color:#38bdf8; font-size:11px; margin-top:12px;" onclick="toggleAuthMode()">Switch to Account Login</button>
     </div>
 
-    <!-- FORTNITE-STYLE COIN & SKIN STORE -->
-    <div id="coin-shop-modal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(10, 15, 30, 0.98); z-index:150; padding:20px; box-sizing:border-box;">
-        <div style="text-align:center; height:100%; display:flex; flex-direction:column; justify-content:center;">
+    <div id="coin-shop-modal" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(10, 15, 30, 0.98); z-index:150; padding:15px; box-sizing:border-box; overflow-y:auto;">
+        <div style="text-align:center;">
             
-            <!-- Main Shop Catalog -->
             <div id="shop-main-view">
-                <h2 style="color:#38bdf8; margin:0 0 5px 0; font-size:20px; text-transform:uppercase;">Item Vault Store</h2>
-                <p style="color:#94a3b8; font-size:12px; margin:0 0 15px 0;">Acquire packages to unlock rare drop matrix cosmetics</p>
+                <h2 style="color:#38bdf8; margin:0 0 2px 0; font-size:18px; text-transform:uppercase;">Item Vault Store</h2>
+                <p style="color:#94a3b8; font-size:11px; margin:0 0 12px 0;">Acquire coin tiers or unlock exclusive cosmetics</p>
                 
-                <!-- Catalog Options Grid -->
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
-                    <!-- 2K Coin Package (Configured) -->
-                    <div style="background:#0f172a; padding:12px; border-radius:10px; border:1px solid #f59e0b; cursor:pointer;" onclick="openCheckout(2000, 500)">
-                        <div style="font-size:20px;">🪙</div>
-                        <div style="color:#fff; font-weight:bold; font-size:14px;">2,000 Coins</div>
-                        <div style="color:#f59e0b; margin-top:3px; font-weight:bold; font-size:13px;">500 ETB</div>
+                <div style="color:#ffca28; font-size:11px; font-weight:bold; text-align:left; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">🪙 Coin Packages (Telebirr)</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
+                    <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #f59e0b; cursor:pointer;" onclick="openCheckout(2000, 500)">
+                        <div style="font-size:18px;">🪙</div>
+                        <div style="color:#fff; font-weight:bold; font-size:13px;">2,000 Coins</div>
+                        <div style="color:#f59e0b; margin-top:2px; font-weight:bold; font-size:12px;">500 ETB</div>
                     </div>
+                    <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #a855f7; cursor:pointer;" onclick="openCheckout(4000, 900)">
+                        <div style="font-size:18px;">✨</div>
+                        <div style="color:#fff; font-weight:bold; font-size:13px;">4,000 Coins</div>
+                        <div style="color:#a855f7; margin-top:2px; font-weight:bold; font-size:12px;">900 ETB</div>
+                    </div>
+                    <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #38bdf8; cursor:pointer;" onclick="openCheckout(5000, 1000)">
+                        <div style="font-size:18px;">💎</div>
+                        <div style="color:#fff; font-weight:bold; font-size:13px;">5,000 Coins</div>
+                        <div style="color:#38bdf8; margin-top:2px; font-weight:bold; font-size:12px;">1,000 ETB</div>
+                    </div>
+                    <div style="background:#0f172a; padding:10px; border-radius:8px; border:1px solid #10b981; cursor:pointer;" onclick="openCheckout(10000, 1800)">
+                        <div style="font-size:18px;">👑</div>
+                        <div style="color:#fff; font-weight:bold; font-size:13px;">10,000 Coins</div>
+                        <div style="color:#10b981; margin-top:2px; font-weight:bold; font-size:12px;">1,800 ETB</div>
+                    </div>
+                </div>
 
-                    <!-- Alternate Value Package -->
-                    <div style="background:#0f172a; padding:12px; border-radius:10px; border:1px solid #a855f7; cursor:pointer;" onclick="openCheckout(5000, 1000)">
-                        <div style="font-size:20px;">💎</div>
-                        <div style="color:#fff; font-weight:bold; font-size:14px;">5,000 Coins</div>
-                        <div style="color:#a855f7; margin-top:3px; font-weight:bold; font-size:13px;">1,000 ETB</div>
+                <div style="color:#38bdf8; font-size:11px; font-weight:bold; text-align:left; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">🎭 Rare Skin Matrix</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
+                    <div style="background:#1e293b; padding:10px; border-radius:8px; border:1px solid #eab308;" onclick="buySkin('Golden Eagle', 1500)">
+                        <div style="font-size:18px;">🦅</div>
+                        <div style="color:#fff; font-weight:bold; font-size:12px;">Golden Eagle</div>
+                        <div style="color:#eab308; margin-top:2px; font-size:11px;">1,500 🪙</div>
+                    </div>
+                    <div style="background:#1e293b; padding:10px; border-radius:8px; border:1px solid #ec4899;" onclick="buySkin('Neon Horizon', 2500)">
+                        <div style="font-size:18px;">🌅</div>
+                        <div style="color:#fff; font-weight:bold; font-size:12px;">Neon Horizon</div>
+                        <div style="color:#ec4899; margin-top:2px; font-size:11px;">2,500 🪙</div>
+                    </div>
+                    <div style="background:#1e293b; padding:10px; border-radius:8px; border:1px solid #06b6d4; margin: 0 auto; grid-column: span 2; width: 88%;" onclick="buySkin('Cyber Shadow', 5000)">
+                        <div style="font-size:18px;">🥷</div>
+                        <div style="color:#fff; font-weight:bold; font-size:12px;">Cyber Shadow (Mythic)</div>
+                        <div style="color:#06b6d4; margin-top:2px; font-size:11px;">5,000 🪙</div>
                     </div>
                 </div>
                 
                 <button onclick="document.getElementById('coin-shop-modal').style.display='none'" style="background:#475569; color:white; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; font-weight:bold;">Close Store</button>
             </div>
 
-            <!-- Telebirr Checkout Matrix (Initially Hidden) -->
-            <div id="shop-checkout-view" style="display:none; text-align:left;">
-                <h3 style="color:#22c55e; margin:0 0 5px 0; font-size:18px; text-align:center;">TELEBIRR SECURE GATEWAY</h3>
-                <p style="color:#e2e8f0; font-size:13px; text-align:center; margin-bottom:15px;">Allocation: <span id="selected-coins" style="color:#f59e0b; font-weight:bold;">0</span> Coins for <span id="selected-cost" style="color:#22c55e; font-weight:bold;">0</span> ETB</p>
+            <div id="shop-checkout-view" style="display:none; text-align:left; margin-top:20px;">
+                <h3 style="color:#22c55e; margin:0 0 5px 0; font-size:16px; text-align:center;">TELEBIRR SECURE GATEWAY</h3>
+                <p style="color:#e2e8f0; font-size:12px; text-align:center; margin-bottom:12px;">Allocation: <span id="selected-coins" style="color:#f59e0b; font-weight:bold;">0</span> Coins for <span id="selected-cost" style="color:#22c55e; font-weight:bold;">0</span> ETB</p>
                 
-                <!-- System Target Reference Box -->
-                <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #3b82f6;">
-                    <div style="color:#94a3b8; font-size:11px; text-transform:uppercase;">Manual Transfer Node:</div>
-                    <div style="color:#fff; font-size:14px; margin:4px 0;"><b>Account Number:</b> <span style="color:#3b82f6; font-family:monospace; font-size:16px; font-weight:bold;">0911276442</span></div>
-                    <div style="color:#fff; font-size:14px;"><b>Account Holder:</b> <span style="color:#fff; font-weight:bold;">situ</span></div>
+                <div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:12px; border-left:4px solid #3b82f6;">
+                    <div style="color:#94a3b8; font-size:10px; text-transform:uppercase;">Manual Transfer Node:</div>
+                    <div style="color:#fff; font-size:13px; margin:2px 0;"><b>Account Number:</b> <span style="color:#3b82f6; font-family:monospace; font-size:15px; font-weight:bold;">0911276442</span></div>
+                    <div style="color:#fff; font-size:13px;"><b>Account Holder:</b> <span style="color:#fff; font-weight:bold;">situ</span></div>
                 </div>
 
-                <!-- Input Field Tracking -->
-                <div style="margin-bottom:15px;">
+                <div style="margin-bottom:12px;">
                     <label style="color:#94a3b8; font-size:11px; display:block; margin-bottom:4px;">Enter Telebirr Transaction / Receipt Code:</label>
                     <input type="text" id="receipt-input" placeholder="e.g., GP26X..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #475569; background:#0f172a; color:white; box-sizing:border-box; font-family:monospace; font-size:13px;">
                 </div>
@@ -148,7 +167,6 @@
         </div>
     </div>
 
-    <!-- BACK-OFFICE OPERATIONS PANEL -->
     <div class="admin-overlay" id="admin-panel-view">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #334155; padding-bottom:8px;">
             <h2 style="color:#ffca28; margin:0; font-size:16px;">💼 CORE MANAGEMENT</h2>
@@ -162,7 +180,6 @@
         <div id="admin-users-list" style="max-height:150px; overflow-y:auto; background:#090d14; padding:6px; border-radius:8px; font-size:11px;"></div>
     </div>
 
-    <!-- RESTRUCTURING OUTCOME OVERLAYS -->
     <div class="win-screen" id="end-screen">
         <div id="win-banner" style="font-size:28px; color:#ffca28; font-weight:900; margin-bottom:10px;">MATCH OVER</div>
         <button class="lobby-btn btn-random" style="width:auto; padding:10px 20px;" onclick="resetToLobby()">Return to Lobby</button>
@@ -184,7 +201,6 @@
         </div>
     </div>
 
-    <!-- ACTION MINI CORES CONTROLS -->
     <div class="action-bar-grid">
         <button class="btn-ad" id="ad-reward-btn" onclick="watchAdReward()">📺 Free Ad (+15 🪙)</button>
         <button class="btn-shop-trigger" onclick="openCoinShop()">🛒 Bundle Shop</button>
@@ -233,14 +249,25 @@
     let vaultCoins = 100;
     let myUid = null;
     let userPhoneNumber = "None";
+    let systemPoolValue = 1000000; // Track system pool capacity natively
     let peer = null, conn = null, myScore = 0, oppScore = 0, myChoice = null, oppChoice = null, amIHost = false;
     let matchmakingChannel = null;
     let currentPendingCoins = 0;
     let currentPendingCost = 0;
     const shortRoomId = Math.random().toString(36).substring(2,6).toUpperCase();
 
-    window.addEventListener('DOMContentLoaded', () => { checkActiveSession(); initGlobalMatchmaker(); });
+    window.addEventListener('DOMContentLoaded', () => { checkActiveSession(); initGlobalMatchmaker(); updatePoolDisplay(); });
     function log(m) { const b = document.getElementById('log-box'); if(b) b.innerHTML = `> ${m}<br>${b.innerHTML}`; }
+
+    // Automated Pool Liquidity Watcher
+    function updatePoolDisplay() {
+        // If the liquidity drop hits or goes below 50k, trigger automatic refill reset loop
+        if (systemPoolValue <= 50000) {
+            systemPoolValue = 1000000;
+            log("⚠️ System Pool reached threshold limit! Auto-resetting to 1,000,000.");
+        }
+        document.getElementById('pool-disp').innerText = systemPoolValue.toLocaleString();
+    }
 
     async function checkActiveSession() {
         if (!db) return;
@@ -308,10 +335,7 @@
                 if(error) throw error;
                 
                 if (data && !data.session && data.user) {
-                    alert("Verification email sent! Please check your inbox or bypass to test offline.");
-                    btn.disabled = false;
-                    btn.innerText = "Sign Up & Play";
-                    return;
+                    alert("Verification check! Moving to game layout. Please make sure email checks are configured inside your provider tab.");
                 }
                 window.location.reload();
             } else {
@@ -349,7 +373,6 @@
         peer.on('error', (err) => { log("Signal warning: " + err.type); });
     }
 
-    /* P2P broadcast engine */
     function initGlobalMatchmaker() {
         if (!db) return;
         matchmakingChannel = db.channel('arena-lobby-hub');
@@ -406,7 +429,10 @@
 
     function setupNetworkTraffic() {
         conn.on('open', () => {
-            vaultCoins -= 10; updateVaultDisplay();
+            vaultCoins -= 10; 
+            systemPoolValue -= 10; // Match deducts from structural target pool
+            updateVaultDisplay();
+            updatePoolDisplay();
             document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
             document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
             log("Match started! Choose your alignment side.");
@@ -447,7 +473,14 @@
             myChoice = null; oppChoice = null;
             if(myScore >= 7 || oppScore >= 7) {
                 document.getElementById('end-screen').style.display = 'flex';
-                document.getElementById('win-banner').innerText = myScore >= 7 ? "VICTORY!" : "DEFEAT";
+                let matchesWon = myScore >= 7;
+                document.getElementById('win-banner').innerText = matchesWon ? "VICTORY!" : "DEFEAT";
+                if(matchesWon) {
+                    vaultCoins += 20; // Win return payload
+                    systemPoolValue += 20;
+                    updateVaultDisplay();
+                    updatePoolDisplay();
+                }
             } else {
                 document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
             }
@@ -462,7 +495,7 @@
         document.getElementById('score-me').innerText = 0; document.getElementById('score-opp').innerText = 0;
     }
     
-    function watchAdReward() { vaultCoins += 15; updateVaultDisplay(); log("Ad allowance balance applied."); }
+    function watchAdReward() { vaultCoins += 15; systemPoolValue -= 15; updateVaultDisplay(); updatePoolDisplay(); log("Ad allowance balance applied."); }
     async function handleLogOut() { if(db && myUid && !myUid.startsWith("guest")) await db.auth.signOut(); window.location.reload(); }
 
     /* Telebirr Bundle Store Logic Layer */
@@ -492,13 +525,22 @@
             alert("Submission error: Receipt tracking number missing.");
             return;
         }
-
-        // Production simulation validation: Credits vault instantly on client view
         vaultCoins += currentPendingCoins; 
         updateVaultDisplay();
-        
         alert(`Verification Pending!\nReceipt ${receiptNumber} logged.\n${currentPendingCoins} Coins provisioned to account.`);
         document.getElementById('coin-shop-modal').style.display = 'none';
+    }
+
+    /* Cosmic Skin Purchase Logic */
+    function buySkin(skinName, price) {
+        if (vaultCoins >= price) {
+            vaultCoins -= price;
+            updateVaultDisplay();
+            alert(`🎉 Congratulations! You have unlocked the rare "${skinName}" skin matrix!`);
+            log(`Cosmetic Unlocked: ${skinName}`);
+        } else {
+            alert("Transaction Denied: Insufficient vault coin balance for this asset tier.");
+        }
     }
 
     function openAdminView() { document.getElementById('admin-panel-view').style.display = 'flex'; }
