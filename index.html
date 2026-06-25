@@ -65,7 +65,7 @@
         .btn-random { background: #3b82f6; } .btn-join { background: #10b981; }
         .btn-quit { background: #ef4444; width: max-content; padding: 6px 12px; font-size: 12px; margin: 10px auto 0 auto; border-radius: 6px; display: none; }
         
-        /* 🎯 CRITICAL MINI PROPORTIONS - IDENTICAL SIZES FOR AD & AUTH ACTIONS */
+        /* 🎯 MINI PROPORTIONS - EXACT IDENTICAL AD & AUTH ACTION FOOTPRINTS */
         .btn-ad { background: #a855f7; width: max-content; padding: 6px 12px; border-radius: 6px; font-size: 11px; margin: 0 auto 12px auto; display: block; }
         .btn-auth-smaller { background: #10b981; width: max-content; padding: 6px 12px; border-radius: 6px; font-size: 11px; margin: 10px auto 0 auto; display: block; }
         
@@ -99,7 +99,7 @@
             <div class="admin-stat-card"><div style="font-size:10px; color:#94a3b8;">PROFILES</div><div class="admin-stat-val" id="stat-total-users">0</div></div>
             <div class="admin-stat-card"><div style="font-size:10px; color:#94a3b8;">POOL</div><div class="admin-stat-val" style="color:#38bdf8;">1.0M</div></div>
         </div>
-        <input type="text" id="admin-user-search" oninput="filterUserAdminDirectory()" placeholder="Filter profiles..." style="width:100%; text-align:left; box-sizing:border-box;">
+        <input type="text" id="admin-user-search" placeholder="Filter profiles..." style="width:100%; text-align:left; box-sizing:border-box;">
         <div id="admin-users-list" style="max-height:150px; overflow-y:auto; background:#090d14; padding:6px; border-radius:8px; font-size:11px;"></div>
     </div>
 
@@ -165,7 +165,11 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuY2RwZ25jcXFyZ2plenVhc2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDQ1OTQsImV4cCI6MjA5Nzg4MDU5NH0.lipuz-wfwye08DTaCUTdMGPZ7a3JgA5wfvgYzorlEOo";
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let isSignUpMode = true, vaultCoins = 100, myUid = null, userPhoneNumber = "None";
+    // Initialized at the top of the context block explicitly
+    let isSignUpMode = true; 
+    let vaultCoins = 100;
+    let myUid = null;
+    let userPhoneNumber = "None";
     let peer = null, conn = null, myScore = 0, oppScore = 0, myChoice = null, oppChoice = null, amIHost = false;
     const shortRoomId = Math.random().toString(36).substring(2,6).toUpperCase();
 
@@ -216,7 +220,7 @@
         const email = document.getElementById('auth-email').value.trim();
         const password = document.getElementById('auth-password').value;
         const btn = document.getElementById('btn-auth-action');
-        if(!email || password.length < 6) { alert("Format Matrix: Credentials require length parameters."); return; }
+        if(!email || password.length < 6) { alert("Format Parameters: Email field missing or password length too short."); return; }
         
         btn.disabled = true; btn.innerText = "Connecting...";
 
@@ -225,12 +229,10 @@
                 const { data, error } = await supabase.auth.signUp({ email, password });
                 if(error) throw error;
                 
-                // FALLBACK SAFETY INTERCEPTOR: Immediately force explicit login state if email needs verification
                 if (data && (!data.session && data.user)) {
                     const { data: fallbackData, error: logErr } = await supabase.auth.signInWithPassword({ email, password });
                     if(logErr) {
-                        // If it fails because of unconfirmed email flag, pass it to sandboxed runtime wrapper
-                        log("Supabase requires unconfirmed email verification. Executing direct bypass initialization.");
+                        log("Supabase requires unconfirmed email verification. Redirecting execution flow.");
                         bypassAuthentication();
                         return;
                     }
@@ -242,7 +244,7 @@
                 window.location.reload();
             }
         } catch(error) {
-            alert("Security Gate Alert: " + error.message);
+            alert("Connection Notice: " + error.message);
             btn.disabled = false;
             btn.innerText = isSignUpMode ? "Sign Up & Play" : "Log In & Play";
         }
@@ -252,7 +254,7 @@
         document.getElementById('auth-screen').style.display = 'none';
         myUid = "guest-" + shortRoomId.toLowerCase();
         document.getElementById('profile-uid-lbl').innerText = "GUEST-" + shortRoomId;
-        log("Sandbox bypass initialized. Global tracking bypassed.");
+        log("Sandbox bypass initialized. Operational baseline clear.");
         initPeerEngine();
     }
 
@@ -267,7 +269,7 @@
         peer = new Peer('cfa-' + shortRoomId.toLowerCase());
         peer.on('open', () => { document.getElementById('my-id-display').innerText = shortRoomId; log("P2P Communication Channels active."); });
         peer.on('connection', (i) => { conn = i; amIHost = true; setupNetworkTraffic(); });
-        peer.on('error', (err) => { log("Network interface reset: " + err.type); });
+        peer.on('error', (err) => { log("Network communication alert: " + err.type); });
     }
     
     function connectToFriend() {
@@ -282,7 +284,7 @@
             vaultCoins -= 10; updateVaultDisplay();
             document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
             document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
-            log("Linked to matchmaking session.");
+            log("Match session active.");
         });
         conn.on('data', (d) => {
             if(d.type === 'CHOICE') { oppChoice = d.choice; checkRoundResolution(); }
@@ -334,7 +336,7 @@
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('score-me').innerText = 0; document.getElementById('score-opp').innerText = 0;
     }
-    function watchAdReward() { vaultCoins += 15; updateVaultDisplay(); log("Ad synchronized. Ledger updated."); }
+    function watchAdReward() { vaultCoins += 15; updateVaultDisplay(); log("Ad synchronized. Vault updated."); }
     async function handleLogOut() { if(myUid && !myUid.startsWith("guest")) await supabase.auth.signOut(); window.location.reload(); }
 </script>
 </body>
