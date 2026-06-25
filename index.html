@@ -59,8 +59,11 @@
         .btn-quit { background: #ef4444; color: white; margin-top: 15px; font-size: 13px; padding: 8px; display: none; }
         input { width: 85%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; margin: 5px 0; }
         
-        .btn-ad { background: #a855f7; color: white; width: auto; min-width: 180px; padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin: 0 auto 15px auto; font-size: 12px; display: inline-block; }
-        .btn-auth-smaller { width: auto; min-width: 200px; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        /* 📺 OPTIMIZED SMALLER REWARD/PAYMENT BUTTON */
+        .btn-ad { background: #a855f7; color: white; width: max-content; padding: 6px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin: 0 auto 15px auto; font-size: 11px; display: block; }
+        
+        /* 🔑 OPTIMIZED NORMAL SIGN UP BUTTON */
+        .btn-auth-smaller { width: 85%; max-width: 260px; padding: 10px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 12px; }
         
         .logs { background: #090d14; border-radius: 8px; padding: 10px; text-align: left; font-family: monospace; font-size: 11px; height: 100px; overflow-y: auto; color: #10b981; border: 1px solid #1e293b; }
         .win-screen { display: none; background: rgba(15, 23, 42, 0.95); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 20px; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
@@ -182,7 +185,6 @@
 </div>
 
 <script>
-    // 📢 VARIABLES INITIALIZED FIRST SO THEY ARE ACCESSIBLE TO THE ENTIRE FILE IMMEDIATELY
     const SUPABASE_URL = "https://sncdpgncqqrgjezuasin.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuY2RwZ25jcXFyZ2plenVhc2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDQ1OTQsImV4cCI6MjA5Nzg4MDU5NH0.lipuz-wfwye08DTaCUTdMGPZ7a3JgA5wfvgYzorlEOo";
     const PLATFORM_ADMIN_EMAIL = "admin@coinarena.com";
@@ -208,7 +210,6 @@
     let myScore = 0; let oppScore = 0; let myChoice = null; let oppChoice = null;
     let amIHost = false;
 
-    // Cache DOM references safely
     window.addEventListener('DOMContentLoaded', () => {
         checkActiveSession();
     });
@@ -233,20 +234,26 @@
     }
 
     async function loadAndSyncProfile(email) {
-        let { data: profile } = await supabase.from('profiles').select('*').eq('id', myUid).maybeSingle();
-        if(!profile) {
-            let phone = document.getElementById('auth-phone').value.trim() || "Not linked";
-            const { data: newProf, error: insErr } = await supabase.from('profiles').insert([{ id: myUid, email, phone_number: phone, coins: 100 }]).select().single();
-            if (insErr) { console.error("Profile instantiation conflict:", insErr); return; }
-            profile = newProf;
-        }
+        try {
+            let { data: profile, error: fetchErr } = await supabase.from('profiles').select('*').eq('id', myUid).maybeSingle();
+            if (fetchErr) throw fetchErr;
 
-        vaultCoins = profile.coins;
-        userPhoneNumber = profile.phone_number;
-        document.getElementById('profile-uid-lbl').innerText = email.split('@')[0].toUpperCase();
-        document.getElementById('profile-phone-lbl').innerText = userPhoneNumber;
-        document.getElementById('vault-coins').innerText = vaultCoins;
-        initPeerEngine();
+            if(!profile) {
+                let phone = document.getElementById('auth-phone').value.trim() || "Not linked";
+                const { data: newProf, error: insErr } = await supabase.from('profiles').insert([{ id: myUid, email, phone_number: phone, coins: 100 }]).select().single();
+                if (insErr) throw insErr;
+                profile = newProf;
+            }
+
+            vaultCoins = profile.coins;
+            userPhoneNumber = profile.phone_number;
+            document.getElementById('profile-uid-lbl').innerText = email.split('@')[0].toUpperCase();
+            document.getElementById('profile-phone-lbl').innerText = userPhoneNumber;
+            document.getElementById('vault-coins').innerText = vaultCoins;
+            initPeerEngine();
+        } catch (err) {
+            alert("Database Synch Error: " + err.message);
+        }
     }
 
     function toggleAuthMode() {
@@ -258,14 +265,32 @@
     async function handleAuthSubmit() {
         const email = document.getElementById('auth-email').value.trim();
         const password = document.getElementById('auth-password').value;
-        if(!email || password.length < 6) { alert("Invalid entry formatting rules."); return; }
+        const submitBtn = document.getElementById('btn-auth-action');
+        
+        if(!email || password.length < 6) { alert("Format Error: Password must be at least 6 characters."); return; }
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Connecting...";
 
         if(isSignUpMode) {
             const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) { alert(error.message); } else { alert("Sign up successful! Re-authenticating..."); window.location.reload(); }
+            if (error) { 
+                alert("Supabase Reg Error: " + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Sign Up & Initialize Account";
+            } else { 
+                alert("Sign up successful! Profile initialized."); 
+                window.location.reload(); 
+            }
         } else {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message); else window.location.reload();
+            if (error) {
+                alert("Supabase Login Error: " + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Verify Login Profile";
+            } else { 
+                window.location.reload(); 
+            }
         }
     }
 
