@@ -249,7 +249,7 @@
     let vaultCoins = 100;
     let myUid = null;
     let userPhoneNumber = "None";
-    let systemPoolValue = 1000000; // Track system pool capacity natively
+    let systemPoolValue = 1000000; 
     let peer = null, conn = null, myScore = 0, oppScore = 0, myChoice = null, oppChoice = null, amIHost = false;
     let matchmakingChannel = null;
     let currentPendingCoins = 0;
@@ -261,7 +261,6 @@
 
     // Automated Pool Liquidity Watcher
     function updatePoolDisplay() {
-        // If the liquidity drop hits or goes below 50k, trigger automatic refill reset loop
         if (systemPoolValue <= 50000) {
             systemPoolValue = 1000000;
             log("⚠️ System Pool reached threshold limit! Auto-resetting to 1,000,000.");
@@ -430,7 +429,7 @@
     function setupNetworkTraffic() {
         conn.on('open', () => {
             vaultCoins -= 10; 
-            systemPoolValue -= 10; // Match deducts from structural target pool
+            systemPoolValue -= 10; 
             updateVaultDisplay();
             updatePoolDisplay();
             document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
@@ -476,7 +475,7 @@
                 let matchesWon = myScore >= 7;
                 document.getElementById('win-banner').innerText = matchesWon ? "VICTORY!" : "DEFEAT";
                 if(matchesWon) {
-                    vaultCoins += 20; // Win return payload
+                    vaultCoins += 20; 
                     systemPoolValue += 20;
                     updateVaultDisplay();
                     updatePoolDisplay();
@@ -495,7 +494,18 @@
         document.getElementById('score-me').innerText = 0; document.getElementById('score-opp').innerText = 0;
     }
     
-    function watchAdReward() { vaultCoins += 15; systemPoolValue -= 15; updateVaultDisplay(); updatePoolDisplay(); log("Ad allowance balance applied."); }
+    // UPDATED ACTIVE MONETIZATION MODULE
+    function watchAdReward() { 
+        // Open the Adsterra tracking link target inside a secure background matrix node channel
+        window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank");
+        
+        vaultCoins += 15; 
+        systemPoolValue -= 15; 
+        updateVaultDisplay(); 
+        updatePoolDisplay(); 
+        log("Monetization trace linked! Ad reward allowance balance applied (+15 🪙)."); 
+    }
+    
     async function handleLogOut() { if(db && myUid && !myUid.startsWith("guest")) await db.auth.signOut(); window.location.reload(); }
 
     /* Telebirr Bundle Store Logic Layer */
