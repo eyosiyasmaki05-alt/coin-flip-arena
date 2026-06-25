@@ -59,7 +59,6 @@
         .btn-quit { background: #ef4444; color: white; margin-top: 15px; font-size: 13px; padding: 8px; display: none; }
         input { width: 85%; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; margin: 5px 0; }
         
-        /* Optimized Sleek Button Styles */
         .btn-ad { background: #a855f7; color: white; width: auto; min-width: 180px; padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin: 0 auto 15px auto; font-size: 12px; display: inline-block; }
         .btn-auth-smaller { width: auto; min-width: 200px; padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         
@@ -183,6 +182,7 @@
 </div>
 
 <script>
+    // 📢 VARIABLES INITIALIZED FIRST SO THEY ARE ACCESSIBLE TO THE ENTIRE FILE IMMEDIATELY
     const SUPABASE_URL = "https://sncdpgncqqrgjezuasin.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuY2RwZ25jcXFyZ2plenVhc2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDQ1OTQsImV4cCI6MjA5Nzg4MDU5NH0.lipuz-wfwye08DTaCUTdMGPZ7a3JgA5wfvgYzorlEOo";
     const PLATFORM_ADMIN_EMAIL = "admin@coinarena.com";
@@ -208,6 +208,11 @@
     let myScore = 0; let oppScore = 0; let myChoice = null; let oppChoice = null;
     let amIHost = false;
 
+    // Cache DOM references safely
+    window.addEventListener('DOMContentLoaded', () => {
+        checkActiveSession();
+    });
+
     const logBox = document.getElementById('log-box');
     const coinObj = document.getElementById('coin-obj');
 
@@ -226,7 +231,6 @@
             document.getElementById('auth-screen').style.display = 'flex';
         }
     }
-    checkActiveSession();
 
     async function loadAndSyncProfile(email) {
         let { data: profile } = await supabase.from('profiles').select('*').eq('id', myUid).maybeSingle();
