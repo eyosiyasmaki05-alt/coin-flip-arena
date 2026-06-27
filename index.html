@@ -187,7 +187,7 @@
             <button onclick="closeAdminView()" style="background:#ef4444; padding:4px 8px; font-size:11px; border-radius:5px; width:auto;">Close</button>
         </div>
         <div class="admin-grid">
-            <div class="admin-stat-card"><div style="font-size:10px; color:#94a3b8;">PROFILES</div><div class="admin-stat-val" id="stat-total-users">0</div></div>
+            <div class="admin-stat-card"><div style="font-size:10px; color:#94a3b8;">PROFILES</div><div class="admin-stat-val" id="stat-total-users">1</div></div>
             <div class="admin-stat-card"><div style="font-size:10px; color:#94a3b8;">POOL</div><div class="admin-stat-val" style="color:#38bdf8;">1.0M</div></div>
         </div>
         <input type="text" id="admin-user-search" placeholder="Filter profiles..." style="width:100%; text-align:left; box-sizing:border-box;">
@@ -436,7 +436,10 @@
 
     function initPeerEngine() {
         peer = new Peer('cfa-' + shortRoomId.toLowerCase());
-        peer.on('open', () => { document.getElementById('my-id-display').innerText = shortRoomId; log("P2P Signaling Engine active."); });
+        peer.on('open', () => { 
+            document.getElementById('my-id-display').innerText = shortRoomId; 
+            log("P2P Signaling Engine active. Ready for matches."); 
+        });
         peer.on('connection', (i) => { 
             conn = i; 
             amIHost = true; 
@@ -501,12 +504,14 @@
         if(id.length !== 4) { alert("Please provide a valid 4-digit code."); return; }
         if(vaultCoins < currentMatchWager) { alert(`Insufficient structural balance to cover the selected ${currentMatchWager} coin wager.`); return; }
         amIHost = false; 
+        log(`Attempting link connection with peer room code: ${id}`);
         conn = peer.connect('cfa-' + id.toLowerCase()); 
         setupNetworkTraffic();
     }
 
     function setupNetworkTraffic() {
         conn.on('open', () => {
+            log("🔗 Connection Established Successfully! Both players linked.");
             if(amIHost) {
                 conn.send({ type: 'CONFIG_SYNC', wager: currentMatchWager });
             }
@@ -522,16 +527,10 @@
             if(d.type === 'STAKE_RESOLUTION') handleStakePayout(d.won);
             if(d.type === 'QUIT') resetToLobby();
         });
-        conn.on('close', () => { resetToLobby(); });
-    }
-
-    function navigateToAdminDashboardDirect() {
-        const directEmailBypass = prompt("Enter Administration Vector Signoff:");
-        if (directEmailBypass && ADMIN_EMAIL_NODES.includes(directEmailBypass.toLowerCase().trim())) {
-            openAdminView();
-        } else {
-            alert("Bypass Key Rejected.");
-        }
+        conn.on('close', () => { 
+            log("Connection dropped by peer.");
+            resetToLobby(); 
+        });
     }
 
     function proceedToMatchStart() {
@@ -541,8 +540,11 @@
         updatePoolDisplay();
         document.getElementById('lobby-ui').style.display = 'none'; 
         document.getElementById('btn-rage-quit').style.display = 'block';
+        
+        // UNLOCK CHOICE BUTTONS
         document.getElementById('btn-h').disabled = false; 
         document.getElementById('btn-t').disabled = false;
+        
         document.getElementById('status-me').innerText = "Make your call!";
         log(`Match active! Stakes Locked: ${currentMatchWager} Coins.`);
     }
@@ -638,10 +640,15 @@
     function resetToLobby() {
         myScore = 0; oppScore = 0;
         document.getElementById('score-me').innerText = "0";
-        document.getElementById('status-me').innerText = "Waiting...";
+        document.getElementById('status-me').innerText = "Waiting... Connecting structural elements.";
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('lobby-ui').style.display = 'block';
         document.getElementById('btn-rage-quit').style.display = 'none';
+        
+        // RE-DISABLE BUTTONS FOR NEXT GAME
+        document.getElementById('btn-h').disabled = true; 
+        document.getElementById('btn-t').disabled = true;
+        
         if(conn) { conn.close(); conn = null; }
         log("Returned back to local arena lobby.");
     }
