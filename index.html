@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,15 +12,22 @@
             --gold-light: #ffe066; --gold-dark: #f59e0b; --gold-border: #d9a700;
             --bg-dark: #0b0f17; --card-bg: #141b26; --panel-bg: #1e2633;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-dark); color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .wrapper { background: var(--card-bg); border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 440px; padding: 25px; text-align: center; border: 1px solid #233044; position: relative; overflow: hidden; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg-dark); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        /* Developer Clipboard Bar */
+        .dev-clipboard-bar { width: 100%; max-width: 440px; background: #0f172a; padding: 10px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed #334155; box-sizing: border-box; }
+        .dev-txt { font-size: 11px; color: #94a3b8; font-family: monospace; }
+        .btn-copy-src { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; }
+        .btn-copy-src:hover { background: #059669; }
+
+        .wrapper { background: var(--card-bg); border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.7); width: 100%; max-width: 440px; padding: 25px; text-align: center; border: 1px solid #233044; position: relative; overflow: hidden; box-sizing: border-box; }
         h1 { color: #ffca28; margin: 0 0 15px; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         
         /* Account Setup Overlay */
         .auth-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:var(--card-bg); border-radius:20px; z-index:100; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:25px; box-sizing:border-box; }
         .auth-toggle { font-size:11px; color:#38bdf8; cursor:pointer; text-decoration:underline; margin-top:10px; background:none; border:none; padding:0; }
-        input { width: 85%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; margin: 6px 0; outline: none; transition: border 0.2s; }
-        input:focus { border-color: #ffca28; }
+        input, select { width: 85%; padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; text-align: center; font-size: 14px; margin: 6px 0; outline: none; transition: border 0.2s; }
+        input:focus, select:focus { border-color: #ffca28; }
 
         /* Back-Office Operations Dashboard */
         .admin-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#0f172a; border-radius:20px; z-index:90; display:none; flex-direction:column; padding:20px; box-sizing:border-box; overflow-y:auto; text-align: left; }
@@ -36,9 +44,9 @@
         .pool { background: #1e293b; border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid #334155; }
         .pool-txt { font-size: 22px; color: #38bdf8; font-weight: bold; font-family: monospace; }
         
-        .scoreboard { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+        .scoreboard { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
         .card { background: var(--panel-bg); padding: 12px; border-radius: 12px; flex: 1; border: 2px solid transparent; }
-        .card.me { border-color: #ffca28; }
+        .card.me { border-color: #ffca28; max-width: 200px; }
         .score { font-size: 26px; font-weight: bold; margin-top: 4px; }
         
         /* 3D Coin Asset Matrix */
@@ -63,6 +71,7 @@
         .setup-box { background: var(--panel-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
         .lobby-btn { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 14px; }
         .btn-random { background: #3b82f6; } .btn-join { background: #10b981; }
+        .btn-invite { background: #a855f7; width: 100%; padding: 8px; margin-top: 6px; border-radius: 8px; font-size: 12px; }
         .btn-quit { background: #ef4444; width: max-content; padding: 6px 12px; font-size: 12px; margin: 10px auto 0 auto; border-radius: 6px; display: none; }
         
         /* Action Mini Controls */
@@ -76,6 +85,11 @@
     </style>
 </head>
 <body>
+
+<div class="dev-clipboard-bar">
+    <span class="dev-txt">🔧 Deployment Mirror Node</span>
+    <button class="btn-copy-src" onclick="copyFullCodeToClipboard()">Copy Code</button>
+</div>
 
 <div class="wrapper">
     
@@ -207,11 +221,24 @@
     </div>
     
     <div class="setup-box" id="lobby-ui">
-        <button class="lobby-btn btn-random" onclick="findRandomMatch()">⚡ Auto-Join Live Match (Cost: 10 🪙)</button>
+        <div style="font-size: 11px; color:#94a3b8; margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Select Stake Wager Amount</div>
+        <select id="wager-selector">
+            <option value="20" selected>20 Coins Match</option>
+            <option value="50">50 Coins Match</option>
+            <option value="100">100 Coins Match</option>
+            <option value="500">500 Coins Match</option>
+            <option value="1000">1000 Coins Match</option>
+        </select>
+
+        <button class="lobby-btn btn-random" onclick="findRandomMatch()">⚡ Auto-Join Live Match</button>
         <div style="margin: 8px 0; color: #475569; font-size: 10px; font-weight:bold;">OR CHALLENGE ACQUAINTANCE</div>
         <div style="font-size: 11px; color:#94a3b8; margin-bottom:4px;">Lobby Access ID: <b style="color: #ffca28; font-size: 14px;" id="my-id-display">....</b></div>
-        <input type="text" id="join-id-input" maxlength="4" placeholder="4-Digit Code" style="width:50%; text-transform:uppercase;">
-        <button class="lobby-btn btn-join" style="width:50%; padding:8px;" onclick="connectToFriend()">Link Room</button>
+        <button class="btn-invite" onclick="copyInvitationLink()">🔗 Copy Invitation Link</button>
+        
+        <div style="margin-top: 10px;">
+            <input type="text" id="join-id-input" maxlength="4" placeholder="4-Digit Code" style="width:50%; text-transform:uppercase;">
+            <button class="lobby-btn btn-join" style="width:45%; padding:8px;" onclick="connectToFriend()">Link Room</button>
+        </div>
     </div>
 
     <div class="pool">
@@ -220,8 +247,7 @@
     </div>
 
     <div class="scoreboard">
-        <div class="card me"><div>You</div><div class="score" id="score-me">0</div><div style="font-size:10px; color:#a1a1aa;" id="status-me">Waiting...</div></div>
-        <div class="card"><div>Opponent</div><div class="score" id="score-opp">0</div><div style="font-size:10px; color:#a1a1aa;" id="status-opp">Waiting...</div></div>
+        <div class="card me"><div>Your Score Count</div><div class="score" id="score-me">0</div><div style="font-size:10px; color:#a1a1aa;" id="status-me">Waiting...</div></div>
     </div>
 
     <div class="coin-box">
@@ -245,6 +271,9 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuY2RwZ25jcXFyZ2plenVhc2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDQ1OTQsImV4cCI6MjA5Nzg4MDU5NH0.lipuz-wfwye08DTaCUTdMGPZ7a3JgA5wfvgYzorlEOo";
     const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+    // Assigned Target Admin Email Array Vector
+    const ADMIN_EMAIL_NODES = ["ha0541561@gmail.com"];
+
     let isSignUpMode = true; 
     let vaultCoins = 100;
     let myUid = null;
@@ -254,10 +283,26 @@
     let matchmakingChannel = null;
     let currentPendingCoins = 0;
     let currentPendingCost = 0;
+    let currentMatchWager = 20;
     const shortRoomId = Math.random().toString(36).substring(2,6).toUpperCase();
 
-    window.addEventListener('DOMContentLoaded', () => { checkActiveSession(); initGlobalMatchmaker(); updatePoolDisplay(); });
+    window.addEventListener('DOMContentLoaded', () => { 
+        checkActiveSession(); 
+        initGlobalMatchmaker(); 
+        updatePoolDisplay();
+        checkURLForInvitation();
+    });
+
     function log(m) { const b = document.getElementById('log-box'); if(b) b.innerHTML = `> ${m}<br>${b.innerHTML}`; }
+
+    function copyFullCodeToClipboard() {
+        const fullSourceCode = document.documentElement.outerHTML;
+        navigator.clipboard.writeText(fullSourceCode).then(() => {
+            alert("Success! The complete updated source code has been copied to your clipboard.");
+        }).catch(() => {
+            alert("Error running automatic clipboard serialization.");
+        });
+    }
 
     function updatePoolDisplay() {
         if (systemPoolValue <= 50000) {
@@ -265,6 +310,29 @@
             log("⚠️ System Pool reached threshold limit! Auto-resetting to 1,000,000.");
         }
         document.getElementById('pool-disp').innerText = systemPoolValue.toLocaleString();
+    }
+
+    function checkURLForInvitation() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomParam = urlParams.get('room');
+        const wagerParam = urlParams.get('wager');
+        if (roomParam && roomParam.length === 4) {
+            document.getElementById('join-id-input').value = roomParam.toUpperCase();
+            if (wagerParam) {
+                document.getElementById('wager-selector').value = wagerParam;
+            }
+            log(`Detected invitation code link for Room: ${roomParam}`);
+        }
+    }
+
+    function copyInvitationLink() {
+        const wagerSelected = document.getElementById('wager-selector').value;
+        const inviteURL = `${window.location.origin}${window.location.pathname}?room=${shortRoomId}&wager=${wagerSelected}`;
+        navigator.clipboard.writeText(inviteURL).then(() => {
+            alert(`Link Copied! Send it to your opponent:\nRoom: ${shortRoomId} | Wager: ${wagerSelected} Coins`);
+        }).catch(() => {
+            alert(`Could not auto-copy. Code is: ${shortRoomId}`);
+        });
     }
 
     async function checkActiveSession() {
@@ -282,6 +350,12 @@
     async function loadAndSyncProfile(email) {
         if (!db) return;
         try {
+            // Assert Admin Privileges if email explicitly maps to configuration arrays
+            if (ADMIN_EMAIL_NODES.includes(email.toLowerCase())) {
+                document.getElementById('admin-access-btn').style.display = 'inline';
+                log("⚡ Privileged Admin Authorization Credentials Verified.");
+            }
+
             const { data: { user } } = await db.auth.getUser();
             let metaPhone = user?.user_metadata?.phone_number || "Unassigned";
 
@@ -363,7 +437,12 @@
     function initPeerEngine() {
         peer = new Peer('cfa-' + shortRoomId.toLowerCase());
         peer.on('open', () => { document.getElementById('my-id-display').innerText = shortRoomId; log("P2P Signaling Engine active."); });
-        peer.on('connection', (i) => { conn = i; amIHost = true; setupNetworkTraffic(); });
+        peer.on('connection', (i) => { 
+            conn = i; 
+            amIHost = true; 
+            currentMatchWager = parseInt(document.getElementById('wager-selector').value);
+            setupNetworkTraffic(); 
+        });
         peer.on('error', (err) => { log("Signal warning: " + err.type); });
     }
 
@@ -376,25 +455,26 @@
                     matchmakingChannel.send({
                         type: 'broadcast',
                         event: 'host_available',
-                        payload: { hostId: shortRoomId }
+                        payload: { hostId: shortRoomId, wager: document.getElementById('wager-selector').value }
                     });
                 }
             })
             .on('broadcast', { event: 'host_available' }, (payload) => {
-                if (window.onHostDiscovery) window.onHostDiscovery(payload.payload.hostId);
+                if (window.onHostDiscovery) window.onHostDiscovery(payload.payload.hostId, payload.payload.wager);
             })
             .subscribe();
     }
 
     function findRandomMatch() {
-        if (vaultCoins < 20) { alert("Matches require a minimum stake of 20 coins."); return; }
+        currentMatchWager = parseInt(document.getElementById('wager-selector').value);
+        if (vaultCoins < currentMatchWager) { alert(`You do not have enough coins to match the ${currentMatchWager} coin wager.`); return; }
         log("Searching for live match channels...");
         let lobbyFound = false;
 
-        window.onHostDiscovery = (discoveredId) => {
-            if (!lobbyFound && discoveredId !== shortRoomId) {
+        window.onHostDiscovery = (discoveredId, hostWager) => {
+            if (!lobbyFound && discoveredId !== shortRoomId && parseInt(hostWager) === currentMatchWager) {
                 lobbyFound = true;
-                log(`Match found! Connecting to arena: ${discoveredId}`);
+                log(`Match found with equivalent stakes! Connecting to arena: ${discoveredId}`);
                 amIHost = false;
                 conn = peer.connect('cfa-' + discoveredId.toLowerCase());
                 setupNetworkTraffic();
@@ -408,8 +488,8 @@
 
         setTimeout(() => {
             if (!lobbyFound && !conn) {
-                log("No open nodes detected. Waiting for challenger as host...");
-                log(`Listening for active pings in Room [${shortRoomId}]...`);
+                log(`No open matching ${currentMatchWager} coin nodes. Waiting as host...`);
+                log(`Listening for active links in Room [${shortRoomId}]...`);
                 window.onHostDiscovery = null;
             }
         }, 2500);
@@ -417,166 +497,192 @@
     
     function connectToFriend() {
         let id = document.getElementById('join-id-input').value.trim().toUpperCase();
-        if(id.length !== 4 || vaultCoins < 20) { alert("Valid code and 20 coins required."); return; }
-        amIHost = false; conn = peer.connect('cfa-' + id.toLowerCase()); setupNetworkTraffic();
+        currentMatchWager = parseInt(document.getElementById('wager-selector').value);
+        if(id.length !== 4) { alert("Please provide a valid 4-digit code."); return; }
+        if(vaultCoins < currentMatchWager) { alert(`Insufficient structural balance to cover the selected ${currentMatchWager} coin wager.`); return; }
+        amIHost = false; 
+        conn = peer.connect('cfa-' + id.toLowerCase()); 
+        setupNetworkTraffic();
     }
 
     function setupNetworkTraffic() {
         conn.on('open', () => {
-            vaultCoins -= 10; 
-            systemPoolValue -= 10; 
-            updateVaultDisplay();
-            updatePoolDisplay();
-            document.getElementById('lobby-ui').style.display = 'none'; document.getElementById('btn-rage-quit').style.display = 'block';
-            document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
-            log("Match started! Standard 10 coin fee deducted. 20 coin winner stake active.");
+            if(amIHost) {
+                conn.send({ type: 'CONFIG_SYNC', wager: currentMatchWager });
+            }
+            proceedToMatchStart();
         });
         conn.on('data', (d) => {
+            if(d.type === 'CONFIG_SYNC') {
+                currentMatchWager = d.wager;
+                document.getElementById('wager-selector').value = d.wager;
+            }
             if(d.type === 'CHOICE') { oppChoice = d.choice; checkRoundResolution(); }
-            if(d.type === 'SYNC_FLIP') executeVisualFlip(d.outcome, d.hScore, d.tScore);
+            if(d.type === 'SYNC_FLIP') executeVisualFlip(d.outcome1, d.outcome2, d.hScore, d.tScore);
             if(d.type === 'STAKE_RESOLUTION') handleStakePayout(d.won);
             if(d.type === 'QUIT') resetToLobby();
         });
         conn.on('close', () => { resetToLobby(); });
     }
 
+    function navigateToAdminDashboardDirect() {
+        const directEmailBypass = prompt("Enter Administration Vector Signoff:");
+        if (directEmailBypass && ADMIN_EMAIL_NODES.includes(directEmailBypass.toLowerCase().trim())) {
+            openAdminView();
+        } else {
+            alert("Bypass Key Rejected.");
+        }
+    }
+
+    function proceedToMatchStart() {
+        vaultCoins -= currentMatchWager; 
+        systemPoolValue -= currentMatchWager; 
+        updateVaultDisplay();
+        updatePoolDisplay();
+        document.getElementById('lobby-ui').style.display = 'none'; 
+        document.getElementById('btn-rage-quit').style.display = 'block';
+        document.getElementById('btn-h').disabled = false; 
+        document.getElementById('btn-t').disabled = false;
+        document.getElementById('status-me').innerText = "Make your call!";
+        log(`Match active! Stakes Locked: ${currentMatchWager} Coins.`);
+    }
+
     function makeChoice(v) { 
         myChoice = v; 
         document.getElementById('btn-h').disabled = true; document.getElementById('btn-t').disabled = true;
+        document.getElementById('status-me').innerText = `Locked: ${v.toUpperCase()}`;
         if(conn) conn.send({ type: 'CHOICE', choice: v }); 
         checkRoundResolution(); 
     }
 
     function checkRoundResolution() {
         if(myChoice && oppChoice && amIHost) {
-            const out = Math.random() < 0.5 ? 'Heads' : 'Tails';
-            if(myChoice === out) myScore++; if(oppChoice === out) oppScore++;
-            executeVisualFlip(out, myScore, oppScore);
-            if(conn) conn.send({ type: 'SYNC_FLIP', outcome: out, hScore: oppScore, tScore: myScore });
+            const toss1 = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            const toss2 = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            
+            let hostRoundPoints = 0;
+            let clientRoundPoints = 0;
+
+            if (myChoice === toss1) hostRoundPoints++;
+            if (myChoice === toss2) hostRoundPoints++;
+
+            if (oppChoice === toss1) clientRoundPoints++;
+            if (oppChoice === toss2) clientRoundPoints++;
+
+            myScore += hostRoundPoints;
+            oppScore += clientRoundPoints;
+
+            executeVisualFlip(toss1, toss2, myScore, oppScore);
+            if(conn) conn.send({ type: 'SYNC_FLIP', outcome1: toss1, outcome2: toss2, hScore: oppScore, tScore: myScore });
         }
     }
 
-    function executeVisualFlip(out, p1, p2) {
+    function executeVisualFlip(out1, out2, p1, p2) {
+        log(`Toss sequence executing: 1st [${out1}] -> 2nd [${out2}]`);
         const coin = document.getElementById('coin-obj');
+        
         coin.style.animation = 'none'; 
         coin.offsetHeight; 
-        coin.style.animation = out === 'Heads' ? 'spinToHeads 1.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards' : 'spinToTails 1.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards';
+        coin.style.animation = out1 === 'Heads' ? 'spinToHeads 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards' : 'spinToTails 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards';
         
         setTimeout(() => {
-            myScore = p1; oppScore = p2;
-            document.getElementById('score-me').innerText = myScore; document.getElementById('score-opp').innerText = oppScore;
-            myChoice = null; oppChoice = null;
+            coin.style.animation = 'none'; 
+            coin.offsetHeight; 
+            coin.style.animation = out2 === 'Heads' ? 'spinToHeads 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards' : 'spinToTails 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards';
+        }, 1400);
+
+        setTimeout(() => {
+            myScore = p1; 
+            oppScore = p2;
             
-            if(myScore >= 7 || oppScore >= 7) {
+            document.getElementById('score-me').innerText = myScore; 
+            document.getElementById('status-me').innerText = "Round settled.";
+            
+            myChoice = null; 
+            oppChoice = null;
+            
+            if(myScore >= 4 || oppScore >= 4) {
                 document.getElementById('end-screen').style.display = 'flex';
-                let matchesWon = myScore >= 7;
+                let matchesWon = myScore >= 4;
                 document.getElementById('win-banner').innerText = matchesWon ? "VICTORY!" : "DEFEAT";
                 
-                // Host pushes final tracking signals down the P2P pipe
                 if(amIHost) {
                     handleStakePayout(matchesWon);
                     if(conn) conn.send({ type: 'STAKE_RESOLUTION', won: !matchesWon });
                 }
             } else {
-                document.getElementById('btn-h').disabled = false; document.getElementById('btn-t').disabled = false;
+                document.getElementById('btn-h').disabled = false; 
+                document.getElementById('btn-t').disabled = false;
+                document.getElementById('status-me').innerText = "Make your call!";
             }
-        }, 1800);
+        }, 2800);
     }
 
-    // LIVE STAKING & BANKRUPTCY EVALUATION MECHANISM
     function handleStakePayout(hasWon) {
+        const totalPayoutValue = currentMatchWager * 2;
         if(hasWon) {
-            vaultCoins += 20; // Earn 20 coins directly from the opponent
-            systemPoolValue += 20;
-            log("🏆 Victory! Claimed +20 coins from your opponent's balance.");
+            vaultCoins += totalPayoutValue; 
+            systemPoolValue += totalPayoutValue;
+            log(`🏆 Match Over! Claimed Victory Stake of +${totalPayoutValue} coins!`);
             updateVaultDisplay();
             updatePoolDisplay();
         } else {
-            vaultCoins -= 20; // Lose 20 coins to the winner
-            systemPoolValue -= 20;
-            log("💀 Defeat! Deducted -20 coins from your vault balance.");
-            
-            // Check if player goes bankrupt
+            log(`💀 Match Over! Defeat suffered. Lost ${currentMatchWager} coins.`);
             if (vaultCoins < 0) {
-                log("🚨 Insufficient coins detected! Launching Auto-Ad recovery backup...");
-                // Launch monetization link inside a new window frame node
-                window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank");
-                
-                // Refill vault balance back up to safety limits (+50 coins backup)
-                vaultCoins = 50;
-                alert("Out of Coins! An ad has been opened to reload your wallet. Provisons updated (+50 🪙 recovery coins loaded).");
+                log("🚨 Out of coins! Launching Auto-Ad recovery backup...");
+                window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719", "_blank");
             }
-            updateVaultDisplay();
-            updatePoolDisplay();
         }
     }
 
-    function triggerRageQuit() { if(conn) conn.send({ type: 'QUIT' }); resetToLobby(); }
     function resetToLobby() {
-        conn = null; myScore = 0; oppScore = 0;
-        document.getElementById('lobby-ui').style.display = 'block'; document.getElementById('btn-rage-quit').style.display = 'none';
+        myScore = 0; oppScore = 0;
+        document.getElementById('score-me').innerText = "0";
+        document.getElementById('status-me').innerText = "Waiting...";
         document.getElementById('end-screen').style.display = 'none';
-        document.getElementById('score-me').innerText = 0; document.getElementById('score-opp').innerText = 0;
-    }
-    
-    function watchAdReward() { 
-        window.open("https://www.effectivecpmnetwork.com/pfihha84?key=8cd025e73c80e1bc41719782116b04ac", "_blank");
-        vaultCoins += 15; 
-        systemPoolValue -= 15; 
-        updateVaultDisplay(); 
-        updatePoolDisplay(); 
-        log("Monetization trace linked! Ad reward allowance balance applied (+15 🪙)."); 
-    }
-    
-    async function handleLogOut() { if(db && myUid && !myUid.startsWith("guest")) await db.auth.signOut(); window.location.reload(); }
-
-    /* Telebirr Bundle Store Logic Layer */
-    function openCoinShop() {
-        document.getElementById('coin-shop-modal').style.display = 'block';
-        backToShop();
+        document.getElementById('lobby-ui').style.display = 'block';
+        document.getElementById('btn-rage-quit').style.display = 'none';
+        if(conn) { conn.close(); conn = null; }
+        log("Returned back to local arena lobby.");
     }
 
+    function triggerRageQuit() {
+        if(conn) conn.send({ type: 'QUIT' });
+        log("Forfeited structural connection mapping.");
+        resetToLobby();
+    }
+
+    function openCoinShop() { document.getElementById('coin-shop-modal').style.display = 'block'; }
     function openCheckout(coins, cost) {
-        currentPendingCoins = coins;
-        currentPendingCost = cost;
-        document.getElementById('selected-coins').innerText = coins.toLocaleString();
+        currentPendingCoins = coins; currentPendingCost = cost;
+        document.getElementById('selected-coins').innerText = coins;
         document.getElementById('selected-cost').innerText = cost;
         document.getElementById('shop-main-view').style.display = 'none';
         document.getElementById('shop-checkout-view').style.display = 'block';
     }
-
     function backToShop() {
-        document.getElementById('receipt-input').value = '';
-        document.getElementById('shop-main-view').style.display = 'block';
         document.getElementById('shop-checkout-view').style.display = 'none';
+        document.getElementById('shop-main-view').style.display = 'block';
     }
-
     function submitReceipt() {
-        const receiptNumber = document.getElementById('receipt-input').value.trim();
-        if (!receiptNumber) {
-            alert("Submission error: Receipt tracking number missing.");
-            return;
-        }
-        vaultCoins += currentPendingCoins; 
+        const code = document.getElementById('receipt-input').value.trim();
+        if(code.length < 5) { alert("Invalid receipt format."); return; }
+        vaultCoins += currentPendingCoins;
         updateVaultDisplay();
-        alert(`Verification Pending!\nReceipt ${receiptNumber} logged.\n${currentPendingCoins} Coins provisioned to account.`);
+        alert(`Success! Credited ${currentPendingCoins} to wallet.`);
         document.getElementById('coin-shop-modal').style.display = 'none';
+        backToShop();
     }
-
-    /* Cosmic Skin Purchase Logic */
-    function buySkin(skinName, price) {
-        if (vaultCoins >= price) {
-            vaultCoins -= price;
-            updateVaultDisplay();
-            alert(`🎉 Congratulations! You have unlocked the rare "${skinName}" skin matrix!`);
-            log(`Cosmetic Unlocked: ${skinName}`);
-        } else {
-            alert("Transaction Denied: Insufficient vault coin balance for this asset tier.");
-        }
+    function buySkin(name, cost) {
+        if(vaultCoins < cost) { alert("Insufficient assets."); return; }
+        vaultCoins -= cost; updateVaultDisplay(); log(`Skin unlocked: ${name}`);
     }
-
     function openAdminView() { document.getElementById('admin-panel-view').style.display = 'flex'; }
     function closeAdminView() { document.getElementById('admin-panel-view').style.display = 'none'; }
+    function handleLogOut() { if(db) db.auth.signOut(); window.location.reload(); }
+    function watchAdReward() { vaultCoins += 15; updateVaultDisplay(); log("Ad compensation processed (+15 🪙)"); }
 </script>
 </body>
 </html>
+
+```
